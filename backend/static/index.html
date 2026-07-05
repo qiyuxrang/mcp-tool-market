@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCP 工具市场</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;height:100vh;display:flex;flex-direction:column;background:#f5f6fa;color:#2d3436}
+header{background:#2d3436;color:white;padding:14px 24px;display:flex;align-items:center;gap:12px;font-size:18px;font-weight:600}
+header .badge{font-size:12px;background:#00b894;color:white;padding:2px 10px;border-radius:12px;font-weight:400}
+.container{display:flex;flex:1;overflow:hidden;gap:0}
+.panel-left{width:340px;min-width:340px;background:white;border-right:1px solid #dfe6e9;display:flex;flex-direction:column;overflow-y:auto}
+.panel-left .panel-header{padding:16px 20px 8px;font-size:13px;color:#636e72;text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.tool-card{margin:6px 12px;padding:14px 16px;border-radius:10px;border:1px solid #dfe6e9;transition:all .2s;cursor:default}
+.tool-card:hover{border-color:#74b9ff;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.tool-card .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.tool-card .card-name{font-weight:600;font-size:15px}
+.tool-card .card-icon{font-size:20px;margin-right:8px}
+.tool-card .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot-connected{background:#00b894;box-shadow:0 0 4px #00b894}
+.dot-disconnected{background:#b2bec3}
+.dot-error{background:#d63031}
+.tool-card .tools-list{font-size:12px;color:#636e72;margin:8px 0 10px;display:flex;flex-wrap:wrap;gap:4px}
+.tool-card .tools-list span{background:#f0f0f0;padding:2px 8px;border-radius:4px;font-size:11px}
+.tool-card .actions{display:flex;gap:6px}
+.tool-card .actions button{padding:5px 12px;border-radius:6px;border:none;cursor:pointer;font-size:12px;transition:all .2s;font-weight:500}
+.btn-connect{background:#00b894;color:white}
+.btn-connect:hover{background:#009977}
+.btn-disconnect{background:#d63031;color:white}
+.btn-disconnect:hover{background:#b71c1c}
+.btn-test{background:#dfe6e9;color:#2d3436}
+.btn-test:hover{background:#c8d6e5}
+button:disabled{opacity:.5;cursor:not-allowed}.panel-right{flex:1;display:flex;flex-direction:column;background:#f5f6fa}
+.panel-right .panel-header{padding:16px 20px 8px;font-size:13px;color:#636e72;text-transform:uppercase;letter-spacing:1px;font-weight:600;background:white;padding:12px 20px;border-bottom:1px solid #dfe6e9}
+.chat-area{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:10px}
+.msg{padding:10px 14px;border-radius:12px;max-width:85%;line-height:1.5;font-size:14px;animation:fadeIn .2s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{background:#74b9ff;color:white;align-self:flex-end;border-bottom-right-radius:4px}
+.msg.assistant{background:white;border:1px solid #dfe6e9;align-self:flex-start;border-bottom-left-radius:4px;white-space:pre-wrap}
+.msg.system{background:#ffeaa7;align-self:center;font-size:12px;border-radius:8px;padding:6px 12px}
+.msg.step{background:#dfe6e9;align-self:flex-start;font-size:13px;border-radius:8px;padding:8px 12px;font-family:monospace;color:#2d3436}
+.msg.step .label{font-weight:600;color:#6c5ce7}
+.msg.result{background:#f0f0f0;align-self:flex-start;font-size:12px;border-radius:8px;padding:8px 12px;font-family:monospace;white-space:pre-wrap;color:#636e72}
+.thinking{animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.chat-input-wrap{display:flex;padding:12px 20px;background:white;border-top:1px solid #dfe6e9;gap:8px}
+.chat-input-wrap textarea{flex:1;border:1px solid #dfe6e9;border-radius:8px;padding:10px 12px;font-size:14px;resize:none;outline:none;font-family:inherit;min-height:44px;max-height:120px;transition:border-color .2s}
+.chat-input-wrap textarea:focus{border-color:#74b9ff}
+.chat-input-wrap button{background:#2d3436;color:white;border:none;border-radius:8px;padding:10px 20px;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s}
+.chat-input-wrap button:hover{background:#636e72}
+.chat-input-wrap button:disabled{background:#b2bec3;cursor:not-allowed}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:1000;justify-content:center;align-items:center}
+.modal-overlay.show{display:flex}
+.modal{background:white;border-radius:12px;padding:24px;width:480px;max-width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.12)}
+.modal h3{margin-bottom:16px;font-size:16px}
+.modal label{display:block;font-size:12px;color:#636e72;margin:10px 0 4px;font-weight:500}
+.modal input,.modal textarea{width:100%;border:1px solid #dfe6e9;border-radius:6px;padding:8px 10px;font-size:13px;outline:none;font-family:monospace}
+.modal textarea{min-height:60px}
+.modal input:focus,.modal textarea:focus{border-color:#74b9ff}
+.modal .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.modal .modal-actions button{padding:7px 18px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:500}
+.modal .modal-result{background:#f0f0f0;border-radius:6px;padding:12px;margin-top:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;max-height:200px;overflow-y:auto;display:none}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#b2bec3;gap:8px;font-size:14px;padding:40px}
+.empty-state .big-icon{font-size:48px;margin-bottom:8px}
+.status-text{font-size:12px;display:inline-flex;align-items:center;gap:4px}
+.panel-memory{width:300px;min-width:300px;background:white;border-left:1px solid #dfe6e9;display:flex;flex-direction:column;overflow:hidden}
+.panel-memory .panel-header{padding:12px 20px;font-size:13px;color:#636e72;text-transform:uppercase;letter-spacing:1px;font-weight:600;border-bottom:1px solid #dfe6e9}
+.user-select-wrap{padding:10px 16px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:8px;font-size:13px}
+.user-select-wrap select{flex:1;border:1px solid #dfe6e9;border-radius:6px;padding:5px 8px;font-size:13px;outline:none}
+.memory-search{padding:10px 16px;border-bottom:1px solid #f0f0f0}
+.memory-search input{width:100%;border:1px solid #dfe6e9;border-radius:6px;padding:7px 10px;font-size:13px;outline:none}
+.memory-search input:focus{border-color:#a29bfe}
+.memory-list{flex:1;overflow-y:auto;padding:8px}
+.memory-item{margin:4px 8px;padding:10px 12px;border-radius:8px;background:#faf9ff;border:1px solid #eee6ff;font-size:13px;line-height:1.4;position:relative}
+.memory-item .mem-meta{display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:#b2bec3}
+.memory-item .mem-del{cursor:pointer;color:#d63031;font-size:11px;background:none;border:none;padding:0}
+.memory-item .mem-stars{color:#fdcb6e}
+.memory-empty{text-align:center;color:#b2bec3;font-size:12px;padding:30px 10px}
+.msg.memory{background:#efeaff;border:1px solid #d6ccff;align-self:flex-start;font-size:13px;border-radius:8px;color:#5f4bb6}
+</style>
+</head>
+<body>
+<header>
+  <span>🔧 MCP 工具市场</span>
+  <span class="badge">v1.0</span>
+</header>
+<div class="container">
+  <div class="panel-left">
+    <div class="panel-header">📦 工具市场</div>
+    <div id="tool-list"></div>
+  </div>
+  <div class="panel-right">
+    <div class="panel-header">💬 AI 对话</div>
+    <div class="chat-area" id="chat-area">
+      <div class="empty-state" id="empty-state">
+        <div class="big-icon">🤖</div>
+        <div>连接左侧工具后，在下方输入问题开始体验</div>
+        <div style="font-size:12px;color:#dfe6e9">例如：北京天气如何？2.5kg等于多少磅？列出所有产品</div>
+      </div>
+    </div>
+    <div class="chat-input-wrap">
+      <textarea id="chat-input" placeholder="输入消息..." rows="1"></textarea>
+      <button id="send-btn" onclick="sendMessage()">发送</button>
+    </div>
+  </div>
+  <div class="panel-memory">
+    <div class="panel-header">🧠 记忆面板</div>
+    <div class="user-select-wrap">
+      <span>👤 用户</span>
+      <select id="user-select" onchange="switchUser()">
+        <option value="default">default</option>
+        <option value="alice">alice</option>
+        <option value="bob">bob</option>
+      </select>
+    </div>
+    <div class="memory-search">
+      <input id="memory-search-input" placeholder="🔍 搜索记忆..." oninput="debounceSearchMemories()">
+    </div>
+    <div class="memory-list" id="memory-list">
+      <div class="memory-empty">暂无记忆<br>和 AI 聊聊天，它会自动记住重要信息</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="test-modal">
+  <div class="modal">
+    <h3>🧪 测试工具</h3>
+    <label>工具</label>
+    <input id="test-tool-name" readonly>
+    <label>参数 (JSON)</label>
+    <textarea id="test-params" rows="3">{}</textarea>
+    <div class="modal-actions">
+      <button onclick="closeTestModal()" style="background:#dfe6e9">取消</button>
+      <button onclick="runTest()" style="background:#6c5ce7;color:white">运行</button>
+    </div>
+    <div id="test-result" class="modal-result"></div>
+  </div>
+</div>
+
+<script>
+const TOOL_ICONS = {file:"📁",weather:"🌤️",calculator:"🧮",database:"🗄️"};
+let testServer = "", testTool = "";
+let conversationMessages = [];
+
+function autoResize(el) {
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 120) + "px";
+}
+document.getElementById("chat-input").addEventListener("input", function(){autoResize(this)});
+document.getElementById("chat-input").addEventListener("keydown", function(e){
+  if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}
+});
+
+async function fetchTools() {
+  let res;
+  try { res = await fetch("/api/tools"); } catch(e) { return; }
+  const data = await res.json();
+  const list = document.getElementById("tool-list");
+  if (!data || typeof data !== "object") return;
+  list.innerHTML = "";
+  for (const [key, t] of Object.entries(data)) {
+    const isConnected = t.status === "connected";
+    const isError = t.status && t.status.startsWith("error");
+    const dotClass = isConnected ? "dot-connected" : isError ? "dot-error" : "dot-disconnected";
+    const statusText = isConnected ? "已连接" : isError ? "错误" : "未连接";
+    const card = document.createElement("div");
+    card.className = "tool-card";
+    card.innerHTML = `
+      <div class="card-header">
+        <span><span class="card-icon">${TOOL_ICONS[key]||"🔧"}</span><span class="card-name">${t.label}</span></span>
+        <span class="status-text"><span class="status-dot ${dotClass}"></span>${statusText}</span>
+      </div>
+      <div class="tools-list">
+        ${t.tools && t.tools.length ? t.tools.map(tt => `<span>${tt.name}</span>`).join("") : '<span style="background:transparent;color:#b2bec3;padding:0">—</span>'}
+      </div>
+      <div class="actions">
+        ${isConnected
+          ? `<button class="btn-disconnect" onclick="disconnectTool('${key}')">断开</button>`
+          : `<button class="btn-connect" onclick="connectTool('${key}')">连接</button>`
+        }
+        ${t.tools && t.tools.length ? `<button class="btn-test" onclick="openTestModal('${key}','${t.tools[0].name}')">测试</button>` : ''}
+      </div>`;
+    list.appendChild(card);
+  }
+}
+
+async function connectTool(name) {
+  addMsg(`🔌 正在连接 ${name}...`, "system");
+  try {
+    await fetch("/api/tools/connect", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});
+  } catch(e) {}
+  fetchTools();
+}
+
+async function disconnectTool(name) {
+  addMsg(`🔌 已断开 ${name}`, "system");
+  try {
+    await fetch("/api/tools/disconnect", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});
+  } catch(e) {}
+  fetchTools();
+}
+
+function openTestModal(server, tool) {
+  testServer = server; testTool = tool;
+  document.getElementById("test-tool-name").value = `${server}/${tool}`;
+  document.getElementById("test-params").value = "{}";
+  const r = document.getElementById("test-result");
+  r.style.display = "none"; r.textContent = "";
+  document.getElementById("test-modal").classList.add("show");
+}
+
+function closeTestModal() {
+  document.getElementById("test-modal").classList.remove("show");
+}
+
+async function runTest() {
+  let args = {};
+  try { args = JSON.parse(document.getElementById("test-params").value); }
+  catch(e) { alert("JSON 格式错误"); return; }
+  const r = document.getElementById("test-result");
+  r.style.display = "block"; r.textContent = "⏳ 调用中...";
+  try {
+    const res = await fetch("/api/tools/test", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({server:testServer,tool:testTool,arguments:args})});
+    const data = await res.json();
+    r.textContent = data.result || "(无返回)";
+  } catch(e) { r.textContent = "请求失败: " + e.message; }
+}
+
+function addMsg(content, type) {
+  const area = document.getElementById("chat-area");
+  const empty = document.getElementById("empty-state");
+  if (empty) empty.style.display = "none";
+  const div = document.createElement("div");
+  div.className = "msg " + type;
+  if (type === "step") div.innerHTML = content;
+  else div.textContent = content;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+  return div;
+}
+
+let streaming = false;
+async function sendMessage() {
+  if (streaming) return;
+  const input = document.getElementById("chat-input");
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = ""; input.style.height = "auto";
+  addMsg(text, "user");
+
+  // Append user message to conversation history
+  conversationMessages.push({role: "user", content: text});
+
+  streaming = true;
+  const btn = document.getElementById("send-btn");
+  btn.disabled = true; btn.textContent = "...";
+
+  try {
+    const res = await fetch("/api/chat", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages: conversationMessages, user_id: currentUser})});
+    if (!res.ok) { addMsg("❌ 请求失败: " + res.status, "step"); return; }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = "";
+    let finalContent = "";
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, {stream: true});
+      const lines = buf.split("\n");
+      buf = lines.pop() || "";
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          try {
+            const ev = JSON.parse(line.slice(6));
+            if (ev.type === "thinking") addMsg(ev.content, "step");
+            else if (ev.type === "tool_call") addMsg(ev.content, "step");
+            else if (ev.type === "memory_recall") {
+              var memories = ev.memories || [];
+              addMsg("🧠 " + ev.content + "：" + memories.join("；"), "memory");
+            }
+            else if (ev.type === "tool_result") addMsg(ev.content, "result");
+            else if (ev.type === "final") {
+              addMsg(ev.content, "assistant");
+              finalContent = ev.content;
+            }
+          } catch(e) {}
+        }
+      }
+    }
+    if (buf.trim()) {
+      const m = buf.match(/^data:\s*(.+)/);
+      if (m) try { const ev = JSON.parse(m[1]); if (ev.type==="final") { addMsg(ev.content,"assistant"); finalContent = ev.content; } } catch(e) {}
+    }
+
+    // Append assistant response to conversation history
+    if (finalContent) {
+      conversationMessages.push({role: "assistant", content: finalContent});
+    }
+    setTimeout(fetchMemories, 4000);
+  } catch(err) {
+    addMsg("❌ 连接失败: " + err.message, "step");
+  } finally {
+    streaming = false;
+    btn.disabled = false; btn.textContent = "发送";
+  }
+}
+
+fetchTools();
+setInterval(fetchTools, 15000);
+
+let currentUser = "default";
+let searchTimer = null;
+
+function switchUser() {
+  currentUser = document.getElementById("user-select").value;
+  conversationMessages = [];  // 切换用户清空对话上下文
+  addMsg("已切换到用户 " + currentUser, "system");
+  fetchMemories();
+}
+
+async function fetchMemories() {
+  try {
+    const res = await fetch("/api/memories?user_id=" + encodeURIComponent(currentUser));
+    const data = await res.json();
+    renderMemories(data.memories || []);
+  } catch(e) {}
+}
+
+function debounceSearchMemories() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(searchMemories, 400);
+}
+
+async function searchMemories() {
+  const q = document.getElementById("memory-search-input").value.trim();
+  if (!q) { fetchMemories(); return; }
+  try {
+    const res = await fetch("/api/memories/search?q=" + encodeURIComponent(q) + "&user_id=" + encodeURIComponent(currentUser));
+    const data = await res.json();
+    renderMemories(data.results || []);
+  } catch(e) {}
+}
+
+function renderMemories(mems) {
+  const list = document.getElementById("memory-list");
+  if (!mems || !mems.length) {
+    list.innerHTML = '<div class="memory-empty">暂无记忆<br>和 AI 聊聊天，它会自动记住重要信息</div>';
+    return;
+  }
+  list.innerHTML = mems.map(function(m) {
+    var stars = "";
+    var imp = m.importance || 0.5;
+    for (var i = 0; i < Math.round(imp * 5); i++) stars += "★";
+    var date = (m.updated_at || m.created_at || "").slice(0, 10);
+    var scoreStr = (m.score !== undefined) ? " · 相关度 " + Math.round(m.score * 100) + "%" : "";
+    return '<div class="memory-item">' +
+      m.content +
+      '<div class="mem-meta">' +
+        '<span class="mem-stars">' + stars + '</span>' +
+        '<span>' + date + scoreStr + ' <button class="mem-del" onclick="deleteMemory(\'' + m.id + '\')">删除</button></span>' +
+      '</div></div>';
+  }).join("");
+}
+
+async function deleteMemory(id) {
+  try {
+    await fetch("/api/memories/" + id, {method: "DELETE"});
+    fetchMemories();
+  } catch(e) {}
+}
+
+fetchMemories();
+</script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+services:
+  file-server:
+    build: ./servers/file-server
+    ports: ["8001:8001"]
+
+  weather-server:
+    build: ./servers/weather-server
+    ports: ["8002:8002"]
+
+  calculator-server:
+    build: ./servers/calculator-server
+    ports: ["8003:8003"]
+
+  db-server:
+    build: ./servers/db-server
+    ports: ["8004:8004"]
+
+  memory-server:
+    build: ./servers/memory-server
+    ports: ["8005:8005"]
+    env_file: ./backend/.env
+    volumes:
+      - ./servers/memory-server/chroma_data:/app/chroma_data
+
+  backend:
+    build: ./backend
+    ports: ["8000:8000"]
+    depends_on: [file-server, weather-server, calculator-server, db-server, memory-server]
+    env_file: ./backend/.env
+    environment:
+      FILE_SERVER_URL: http://file-server:8001
+      WEATHER_SERVER_URL: http://weather-server:8002
+      CALCULATOR_SERVER_URL: http://calculator-server:8003
+      DATABASE_SERVER_URL: http://db-server:8004
+      MEMORY_SERVER_URL: http://memory-server:8005
