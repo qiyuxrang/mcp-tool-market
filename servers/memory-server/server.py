@@ -7,6 +7,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 import embeddings
+import knowledge_store
 import memory_store
 import pipeline
 
@@ -64,6 +65,46 @@ def list_memories(user_id: str = "default") -> str:
             [{"content": m["content"], "importance": m["importance"]}
              for m in mems],
             ensure_ascii=False)
+    except Exception as e:
+        return f"Error: {e}"
+
+
+@mcp.tool()
+async def index_knowledge(source: str, content: str) -> str:
+    """将文档写入知识库。相同来源会被新内容覆盖。
+
+    Args:
+        source: 来源名称，例如“员工手册”或文件名
+        content: 文档正文
+    """
+    try:
+        source = source.strip()
+        if not source:
+            return "Error: 来源不能为空"
+        chunks = knowledge_store.split_text(content)
+        if not chunks:
+            return "Error: 文档内容不能为空"
+        vectors = await embeddings.embed_texts(chunks)
+        count = knowledge_store.replace_document(source, chunks, vectors)
+        return json.dumps({"source": source, "chunks": count}, ensure_ascii=False)
+    except Exception as e:
+        return f"Error: {e}"
+
+
+@mcp.tool()
+async def search_knowledge(query: str, top_k: int = 5) -> str:
+    """检索知识库。回答文档或制度相关问题前调用，并在答案中标注 source。
+
+    Args:
+        query: 用户问题或检索关键词
+        top_k: 返回的相关片段数量
+    """
+    try:
+        vector = await embeddings.embed_text(query)
+        results = knowledge_store.search(vector, top_k=min(max(top_k, 1), 10))
+        if not results:
+            return "知识库为空或没有找到相关内容"
+        return json.dumps(results, ensure_ascii=False)
     except Exception as e:
         return f"Error: {e}"
 

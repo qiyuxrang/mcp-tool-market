@@ -1,6 +1,6 @@
 # MCP 工具市场
 
-基于 Model Context Protocol 的标准化 AI 工具集合平台。包含 4 个 MCP Server、Agent 引擎和 Web 管理界面。
+基于 Model Context Protocol 的标准化 AI 工具集合平台。包含 5 个 MCP Server、Agent 引擎和 Web 管理界面。
 
 ## 功能
 
@@ -10,7 +10,24 @@
 | 🌤️ 天气查询工具 | 实时天气与天气预报（wttr.in） |
 | 🧮 计算器工具 | 数学计算与单位换算（AST 安全求值） |
 | 🗄️ 数据库查询工具 | 基于 SQLite 的结构化数据查询（SELECT-only） |
-| 🧠 记忆系统 | Agent 长期记忆（Mem0 式双阶段流水线，ChromaDB 持久化） |
+| 🧠 记忆与知识库 | Agent 长期记忆；文档切块、语义检索与来源引用（ChromaDB 持久化） |
+
+## RAG 场景演示
+
+连接“记忆系统”后，可以直接对 Agent 说：
+
+1. `请将以下内容存入知识库，来源为员工手册：员工出差住宿标准为每晚500元，报销需在返程后10个工作日内提交。`
+2. `根据知识库回答：出差住宿每晚最多报销多少？请标注来源。`
+
+Agent 会先调用 `index_knowledge` 写入文档，再调用 `search_knowledge` 检索片段，并基于来源回答。
+
+运行知识库回归评测：
+
+```bash
+cd servers/memory-server
+python evaluate_knowledge.py       # 离线，无需 API
+python evaluate_knowledge.py live  # 使用当前环境变量配置的 Embedding API
+```
 
 ## 快速开始
 
