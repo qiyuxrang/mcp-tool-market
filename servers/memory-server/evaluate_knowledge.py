@@ -33,6 +33,7 @@ CASES = [
     ("病假需要提供什么材料？", "请假制度"),
     ("客户日志在线保存多久？", "数据规范"),
     ("归档数据保留多长时间？", "数据规范"),
+    ("今天天气怎么样？", None),
 ]
 
 
@@ -63,10 +64,12 @@ async def evaluate(live: bool = False) -> None:
     hits = 0
     started = perf_counter()
     for query, expected in CASES:
-        results = knowledge_store.search(await embed(query) if live else embed(query), top_k=1)
-        actual = results[0]["source"] if results else "<none>"
+        results = knowledge_store.search(
+            await embed(query) if live else embed(query), top_k=1, min_score=0.30
+        )
+        actual = results[0]["source"] if results else None
         hits += actual == expected
-        print(f"{'PASS' if actual == expected else 'FAIL'} {query} -> {actual}")
+        print(f"{'PASS' if actual == expected else 'FAIL'} {query} -> {actual or '<none>'}")
 
     elapsed_ms = (perf_counter() - started) * 1000
     accuracy = hits / len(CASES)

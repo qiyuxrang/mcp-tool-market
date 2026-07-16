@@ -12,6 +12,7 @@ import memory_store
 import pipeline
 
 mcp = FastMCP("Memory Server")
+KNOWLEDGE_MIN_SCORE = float(os.getenv("KNOWLEDGE_MIN_SCORE", "0.30"))
 
 
 # ------------------------- MCP 工具（AI 主动调用） -------------------------
@@ -101,7 +102,11 @@ async def search_knowledge(query: str, top_k: int = 5) -> str:
     """
     try:
         vector = await embeddings.embed_text(query)
-        results = knowledge_store.search(vector, top_k=min(max(top_k, 1), 10))
+        results = knowledge_store.search(
+            vector,
+            top_k=min(max(top_k, 1), 10),
+            min_score=KNOWLEDGE_MIN_SCORE,
+        )
         if not results:
             return "知识库为空或没有找到相关内容"
         return json.dumps(results, ensure_ascii=False)
@@ -124,13 +129,15 @@ async def http_list(request: Request) -> JSONResponse:
 async def http_search(request: Request) -> JSONResponse:
     user_id = request.query_params.get("user_id", "default")
     query = request.query_params.get("q", "")
-    top_k = int(request.query_params.get("top_k", 5))
     if not query:
         return JSONResponse({"results": []})
     try:
+        top_k = min(max(int(request.query_params.get("top_k", 5)), 1), 20)
         emb = await embeddings.embed_text(query)
         results = memory_store.search_memories(emb, user_id, top_k=top_k)
         return JSONResponse({"results": results})
+    except (TypeError, ValueError) as e:
+        return JSONResponse({"results": [], "error": str(e)}, status_code=400)
     except Exception as e:
         return JSONResponse({"results": [], "error": str(e)}, status_code=500)
 
@@ -142,8 +149,12 @@ async def http_extract(request: Request) -> JSONResponse:
         body = await request.json()
         conversation = body.get("conversation", [])
         user_id = body.get("user_id", "default")
+        if not isinstance(conversation, list) or len(conversation) > 100:
+            raise ValueError("conversation 必须是最多 100 条消息的数组")
         operations = await pipeline.run_pipeline(conversation, user_id)
         return JSONResponse({"operations": operations})
+    except (TypeError, ValueError) as e:
+        return JSONResponse({"operations": [], "error": str(e)}, status_code=400)
     except Exception as e:
         return JSONResponse({"operations": [], "error": str(e)}, status_code=500)
 
@@ -151,8 +162,9 @@ async def http_extract(request: Request) -> JSONResponse:
 @mcp.custom_route("/memories/{mem_id}", methods=["DELETE"])
 async def http_delete(request: Request) -> JSONResponse:
     mem_id = request.path_params.get("mem_id", "")
+    user_id = request.query_params.get("user_id", "default")
     try:
-        ok = memory_store.delete_memory(mem_id)
+        ok = memory_store.delete_memory(mem_id, user_id)
         return JSONResponse({"success": ok})
     except Exception as e:
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)
@@ -160,4 +172,4 @@ async def http_delete(request: Request) -> JSONResponse:
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8005))
     import uvicorn
-    uvicorn.run(mcp.sse_app(), host="0.0.0.0", port=port)
+    uvicorn.run(mcp.sse_app(), host=os.getenv("HOST", "127.0.0.1"), port=port)

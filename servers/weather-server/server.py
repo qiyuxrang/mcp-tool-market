@@ -85,4 +85,4 @@ def get_forecast(city: str, days: int = 3) -> str:
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8002))
     import uvicorn
-    uvicorn.run(mcp.sse_app(), host="0.0.0.0", port=port)
+    uvicorn.run(mcp.sse_app(), host=os.getenv("HOST", "127.0.0.1"), port=port)

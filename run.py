@@ -17,7 +17,23 @@ SERVERS = [
 ]
 processes = []
 
+
+def load_env(path: Path) -> None:
+    """Load the simple KEY=VALUE format used by backend/.env."""
+    if not path.is_file():
+        return
+    # ponytail: this covers the checked-in template; use python-dotenv only if
+    # multiline values or variable interpolation become necessary.
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip().strip("\"'"))
+
+
 def main():
+    load_env(BASE / "backend" / ".env")
     print("MCP 工具市场 — 开发模式启动")
     print("-" * 40)
 
@@ -26,6 +42,7 @@ def main():
         server_dir = BASE / "servers" / name
         env = os.environ.copy()
         env["PORT"] = str(port)
+        env["HOST"] = "127.0.0.1"
         p = subprocess.Popen([sys.executable, "server.py"], cwd=server_dir, env=env)
         processes.append(p)
         print(f"  OK {name} (:{port}) — PID {p.pid}")
@@ -34,7 +51,7 @@ def main():
     # Start backend
     backend_dir = BASE / "backend"
     p = subprocess.Popen(
-        [sys.executable, "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"],
+        [sys.executable, "-m", "uvicorn", "app:app", "--host", "127.0.0.1", "--port", "8000", "--reload"],
         cwd=backend_dir,
     )
     processes.append(p)

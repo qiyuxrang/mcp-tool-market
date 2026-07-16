@@ -1,5 +1,6 @@
 """Mem0 式双阶段记忆流水线：抽取候选事实 -> 对比已有记忆做更新决策。"""
 import json
+import math
 import os
 
 from openai import AsyncOpenAI
@@ -73,9 +74,18 @@ async def extract_facts(conversation: list[dict]) -> list[dict]:
     facts = []
     for item in result:
         if isinstance(item, dict) and item.get("content"):
+            content = str(item["content"]).strip()
+            if not content or len(content) > 2000:
+                continue
+            try:
+                importance = float(item.get("importance", 0.5))
+            except (TypeError, ValueError):
+                importance = 0.5
+            if not math.isfinite(importance):
+                importance = 0.5
             facts.append({
-                "content": str(item["content"]),
-                "importance": float(item.get("importance", 0.5)),
+                "content": content,
+                "importance": min(max(importance, 0), 1),
             })
     return facts
 
@@ -102,23 +112,50 @@ async def resolve_memory(fact: dict, user_id: str) -> dict:
                       .replace("{existing}", existing_text)
     )
     if not isinstance(decision, dict):
-        decision = {"action": "ADD"}
+        return {
+            "action": "ERROR",
+            "content": fact["content"],
+            "error": "记忆决策返回无法解析，未修改存储",
+        }
 
-    action = decision.get("action", "ADD").upper()
+    action = str(decision.get("action", "")).upper()
+    if action not in {"ADD", "UPDATE", "DELETE", "NONE"}:
+        return {
+            "action": "ERROR",
+            "content": fact["content"],
+            "error": f"不支持的记忆操作: {action or '<empty>'}",
+        }
+    if action in {"UPDATE", "DELETE"} and not decision.get("target_id"):
+        return {
+            "action": "ERROR",
+            "content": fact["content"],
+            "error": f"{action} 缺少 target_id，未修改存储",
+        }
 
     if action == "UPDATE" and decision.get("target_id"):
         new_content = decision.get("content") or fact["content"]
         new_emb = await embeddings.embed_text(new_content)
         ok = memory_store.update_memory(
-            decision["target_id"], new_content, new_emb,
+            decision["target_id"], new_content, new_emb, user_id,
             importance=fact["importance"])
         if ok:
             return {"action": "UPDATE", "content": new_content,
                     "target_id": decision["target_id"]}
-        action = "ADD"  # 目标不存在则回退为新增
+        return {
+            "action": "ERROR",
+            "content": fact["content"],
+            "target_id": decision["target_id"],
+            "error": "目标记忆不存在或不属于当前用户",
+        }
 
     if action == "DELETE" and decision.get("target_id"):
-        memory_store.delete_memory(decision["target_id"])
+        if not memory_store.delete_memory(decision["target_id"], user_id):
+            return {
+                "action": "ERROR",
+                "target_id": decision["target_id"],
+                "content": fact["content"],
+                "error": "目标记忆不存在或不属于当前用户",
+            }
         return {"action": "DELETE", "target_id": decision["target_id"],
                 "content": fact["content"]}
 

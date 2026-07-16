@@ -12,5 +12,6 @@ RUN mkdir workspace
 EXPOSE 8001
 
 ENV PORT=8001
+ENV HOST=0.0.0.0
 
 CMD ["python", "server.py"]

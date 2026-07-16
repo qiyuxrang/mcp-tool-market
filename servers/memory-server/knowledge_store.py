@@ -51,7 +51,9 @@ def replace_document(source: str, chunks: list[str], vectors: list[list[float]])
     return len(chunks)
 
 
-def search(query_vector: list[float], top_k: int = 5) -> list[dict]:
+def search(
+    query_vector: list[float], top_k: int = 5, min_score: float | None = None
+) -> list[dict]:
     """返回最相关的知识片段及来源。"""
     count = _collection.count()
     if count == 0:
@@ -60,7 +62,7 @@ def search(query_vector: list[float], top_k: int = 5) -> list[dict]:
         query_embeddings=[query_vector],
         n_results=min(max(top_k, 1), count),
     )
-    return [
+    matches = [
         {
             "content": result["documents"][0][i],
             "source": result["metadatas"][0][i]["source"],
@@ -69,3 +71,6 @@ def search(query_vector: list[float], top_k: int = 5) -> list[dict]:
         }
         for i in range(len(result["ids"][0]))
     ]
+    if min_score is not None:
+        matches = [item for item in matches if item["score"] >= min_score]
+    return matches
