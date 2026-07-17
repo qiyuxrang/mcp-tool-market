@@ -11,4 +11,6 @@ RUN python init_db.py
 
 EXPOSE 8004
 
+ENV HOST=0.0.0.0
+
 CMD ["python", "server.py"]

@@ -5,109 +5,76 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MCP 工具市场</title>
 <style>
+:root{color-scheme:dark;--bg:#101214;--surface:#15181b;--raised:#1b1f23;--hover:#22272c;--line:#2b3035;--line-strong:#3a4148;--text:#f0f2f3;--muted:#a3a9af;--subtle:#858d94;--accent:#e59064;--accent-hover:#f0a076;--accent-soft:rgba(229,144,100,.12);--success:#6fb58d;--danger:#d97a7a;--warning:#d7ac68;--radius:14px;--control-radius:10px}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;height:100vh;display:flex;flex-direction:column;background:#f5f6fa;color:#2d3436}
-header{background:#2d3436;color:white;padding:14px 24px;display:flex;align-items:center;gap:12px;font-size:18px;font-weight:600}
-header .badge{font-size:12px;background:#00b894;color:white;padding:2px 10px;border-radius:12px;font-weight:400}
-.container{display:flex;flex:1;overflow:hidden;gap:0}
-.panel-left{width:340px;min-width:340px;background:white;border-right:1px solid #dfe6e9;display:flex;flex-direction:column;overflow-y:auto}
-.panel-left .panel-header{padding:16px 20px 8px;font-size:13px;color:#636e72;text-transform:uppercase;letter-spacing:1px;font-weight:600}
-.tool-card{margin:6px 12px;padding:14px 16px;border-radius:10px;border:1px solid #dfe6e9;transition:all .2s;cursor:default}
-.tool-card:hover{border-color:#74b9ff;box-shadow:0 2px 8px rgba(0,0,0,.06)}
-.tool-card .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-.tool-card .card-name{font-weight:600;font-size:15px}
-.tool-card .card-icon{font-size:20px;margin-right:8px}
-.tool-card .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
-.dot-connected{background:#00b894;box-shadow:0 0 4px #00b894}
-.dot-disconnected{background:#b2bec3}
-.dot-error{background:#d63031}
-.tool-card .tools-list{font-size:12px;color:#636e72;margin:8px 0 10px;display:flex;flex-wrap:wrap;gap:4px}
-.tool-card .tools-list span{background:#f0f0f0;padding:2px 8px;border-radius:4px;font-size:11px}
-.tool-card .actions{display:flex;gap:6px}
-.tool-card .actions button{padding:5px 12px;border-radius:6px;border:none;cursor:pointer;font-size:12px;transition:all .2s;font-weight:500}
-.btn-connect{background:#00b894;color:white}
-.btn-connect:hover{background:#009977}
-.btn-disconnect{background:#d63031;color:white}
-.btn-disconnect:hover{background:#b71c1c}
-.btn-test{background:#dfe6e9;color:#2d3436}
-.btn-test:hover{background:#c8d6e5}
-button:disabled{opacity:.5;cursor:not-allowed}.panel-right{flex:1;display:flex;flex-direction:column;background:#f5f6fa}
-.panel-right .panel-header{padding:16px 20px 8px;font-size:13px;color:#636e72;text-transform:uppercase;letter-spacing:1px;font-weight:600;background:white;padding:12px 20px;border-bottom:1px solid #dfe6e9}
-.chat-area{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:10px}
-.msg{padding:10px 14px;border-radius:12px;max-width:85%;line-height:1.5;font-size:14px;animation:fadeIn .2s}
-@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-.msg.user{background:#74b9ff;color:white;align-self:flex-end;border-bottom-right-radius:4px}
-.msg.assistant{background:white;border:1px solid #dfe6e9;align-self:flex-start;border-bottom-left-radius:4px;white-space:pre-wrap}
-.msg.system{background:#ffeaa7;align-self:center;font-size:12px;border-radius:8px;padding:6px 12px}
-.msg.step{background:#dfe6e9;align-self:flex-start;font-size:13px;border-radius:8px;padding:8px 12px;font-family:monospace;color:#2d3436}
-.msg.step .label{font-weight:600;color:#6c5ce7}
-.msg.result{background:#f0f0f0;align-self:flex-start;font-size:12px;border-radius:8px;padding:8px 12px;font-family:monospace;white-space:pre-wrap;color:#636e72}
-.thinking{animation:pulse 1.2s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.chat-input-wrap{display:flex;padding:12px 20px;background:white;border-top:1px solid #dfe6e9;gap:8px}
-.chat-input-wrap textarea{flex:1;border:1px solid #dfe6e9;border-radius:8px;padding:10px 12px;font-size:14px;resize:none;outline:none;font-family:inherit;min-height:44px;max-height:120px;transition:border-color .2s}
-.chat-input-wrap textarea:focus{border-color:#74b9ff}
-.chat-input-wrap button{background:#2d3436;color:white;border:none;border-radius:8px;padding:10px 20px;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s}
-.chat-input-wrap button:hover{background:#636e72}
-.chat-input-wrap button:disabled{background:#b2bec3;cursor:not-allowed}
-.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:1000;justify-content:center;align-items:center}
-.modal-overlay.show{display:flex}
-.modal{background:white;border-radius:12px;padding:24px;width:480px;max-width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.12)}
-.modal h3{margin-bottom:16px;font-size:16px}
-.modal label{display:block;font-size:12px;color:#636e72;margin:10px 0 4px;font-weight:500}
-.modal input,.modal textarea{width:100%;border:1px solid #dfe6e9;border-radius:6px;padding:8px 10px;font-size:13px;outline:none;font-family:monospace}
-.modal textarea{min-height:60px}
-.modal input:focus,.modal textarea:focus{border-color:#74b9ff}
-.modal .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
-.modal .modal-actions button{padding:7px 18px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:500}
-.modal .modal-result{background:#f0f0f0;border-radius:6px;padding:12px;margin-top:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;max-height:200px;overflow-y:auto;display:none}
-.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#b2bec3;gap:8px;font-size:14px;padding:40px}
-.empty-state .big-icon{font-size:48px;margin-bottom:8px}
-.status-text{font-size:12px;display:inline-flex;align-items:center;gap:4px}
-.panel-memory{width:300px;min-width:300px;background:white;border-left:1px solid #dfe6e9;display:flex;flex-direction:column;overflow:hidden}
-.panel-memory .panel-header{padding:12px 20px;font-size:13px;color:#636e72;text-transform:uppercase;letter-spacing:1px;font-weight:600;border-bottom:1px solid #dfe6e9}
-.user-select-wrap{padding:10px 16px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:8px;font-size:13px}
-.user-select-wrap select{flex:1;border:1px solid #dfe6e9;border-radius:6px;padding:5px 8px;font-size:13px;outline:none}
-.memory-search{padding:10px 16px;border-bottom:1px solid #f0f0f0}
-.memory-search input{width:100%;border:1px solid #dfe6e9;border-radius:6px;padding:7px 10px;font-size:13px;outline:none}
-.memory-search input:focus{border-color:#a29bfe}
-.memory-list{flex:1;overflow-y:auto;padding:8px}
-.memory-item{margin:4px 8px;padding:10px 12px;border-radius:8px;background:#faf9ff;border:1px solid #eee6ff;font-size:13px;line-height:1.4;position:relative}
-.memory-item .mem-meta{display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:#b2bec3}
-.memory-item .mem-del{cursor:pointer;color:#d63031;font-size:11px;background:none;border:none;padding:0}
-.memory-item .mem-stars{color:#fdcb6e}
-.memory-empty{text-align:center;color:#b2bec3;font-size:12px;padding:30px 10px}
-.msg.memory{background:#efeaff;border:1px solid #d6ccff;align-self:flex-start;font-size:13px;border-radius:8px;color:#5f4bb6}
+html,body{height:100%}
+body{font-family:"Segoe UI Variable","SF Pro Display","Noto Sans SC",system-ui,sans-serif;min-height:100dvh;display:flex;flex-direction:column;overflow:hidden;background:radial-gradient(circle at 52% -20%,rgba(229,144,100,.1),transparent 34%),var(--bg);color:var(--text)}
+button,input,textarea,select{font:inherit}button{white-space:nowrap}button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+header{height:68px;flex:none;padding:0 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:rgba(16,18,20,.94)}
+.brand{display:flex;align-items:center;gap:12px}.brand-mark{width:38px;height:38px;border:1px solid rgba(229,144,100,.5);border-radius:11px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font:700 13px/1 ui-monospace,SFMono-Regular,Consolas,monospace}.brand-name{font-size:15px;font-weight:680;letter-spacing:-.01em}.brand-sub{color:var(--subtle);font-size:11px;margin-top:2px}
+.header-stats{display:flex;align-items:center;gap:18px}.header-stat{display:grid;grid-template-columns:auto auto;align-items:baseline;gap:6px}.header-stat strong{font:650 15px/1 ui-monospace,SFMono-Regular,Consolas,monospace}.header-stat span{font-size:11px;color:var(--subtle)}.live-state{display:flex;align-items:center;gap:7px;padding-left:18px;border-left:1px solid var(--line);color:var(--muted);font-size:12px}.live-state .status-dot{width:7px;height:7px;background:var(--success);border-radius:50%}
+.container{display:grid;grid-template-columns:310px minmax(420px,1fr) 310px;flex:1;min-height:0;overflow:hidden}.panel-left,.panel-right,.panel-memory{min-width:0;min-height:0}.panel-left,.panel-memory{display:flex;flex-direction:column;background:var(--surface)}.panel-left{border-right:1px solid var(--line)}.panel-memory{border-left:1px solid var(--line)}
+.panel-header{height:57px;flex:none;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.panel-title{font-size:13px;font-weight:650}.panel-meta{font:500 10px/1 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--subtle)}.clear-btn{border:0;background:transparent;color:var(--subtle);font-size:11px;cursor:pointer;padding:7px 9px;border-radius:8px}.clear-btn:hover{background:var(--hover);color:var(--text)}
+#tool-list{padding:10px;overflow-y:auto}.tool-card{padding:13px;margin-bottom:8px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);transition:border-color .2s ease,background .2s ease,transform .2s ease}.tool-card:hover{border-color:var(--line-strong);background:var(--raised);transform:translateY(-1px)}.card-header{display:flex;align-items:center;justify-content:space-between;gap:10px}.card-identity{display:flex;align-items:center;min-width:0}.card-icon{width:34px;height:34px;flex:none;margin-right:10px;border-radius:9px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font:700 10px/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.02em}.card-name{font-size:13px;font-weight:650}.status-text{font-size:10px;color:var(--muted);display:inline-flex;align-items:center;gap:6px}.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block}.dot-connected{background:var(--success)}.dot-disconnected{background:var(--subtle)}.dot-error{background:var(--danger)}
+.tools-list{margin:11px 0;display:flex;flex-wrap:wrap;gap:5px}.tool-chip{border:1px solid var(--line);background:transparent;color:var(--muted);padding:4px 7px;border-radius:7px;font:500 10px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;cursor:pointer}.tool-chip:hover{border-color:rgba(229,144,100,.45);color:var(--accent);background:var(--accent-soft)}.tools-empty{color:var(--subtle);font-size:11px}.actions{display:flex;gap:6px}.actions button,.modal-actions button{border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:var(--raised);color:var(--muted);font-size:11px;font-weight:600;cursor:pointer}.actions button:hover,.modal-actions button:hover{border-color:var(--line-strong);color:var(--text)}.actions .btn-connect,.modal-actions .btn-run{border-color:transparent;background:var(--accent);color:#24170f}.actions .btn-connect:hover,.modal-actions .btn-run:hover{background:var(--accent-hover);color:#24170f}.actions .btn-disconnect:hover{border-color:rgba(217,122,122,.5);color:var(--danger)}
+.market-summary{margin-top:9px;color:var(--muted);font-size:11px;line-height:1.5}.market-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px}.market-pill{border:1px solid var(--line);border-radius:8px;padding:6px 7px;background:#111315}.market-pill span{display:block;color:var(--subtle);font-size:9px;margin-bottom:3px}.market-pill strong{display:block;color:var(--text);font-size:11px;font-weight:650}.permission-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}.permission-tag{border:1px solid rgba(229,144,100,.25);border-radius:7px;background:var(--accent-soft);color:#e8b89f;padding:4px 6px;font-size:10px;line-height:1.2}.example-line{margin-top:8px;color:var(--subtle);font-size:10px;line-height:1.45}
+.panel-right{display:flex;flex-direction:column;background:rgba(16,18,20,.58)}.chat-area{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:10px;scrollbar-gutter:stable}.msg{padding:10px 13px;border-radius:12px;max-width:min(82%,720px);line-height:1.55;font-size:13px}.msg.user{background:var(--accent);color:#24170f;align-self:flex-end;border-bottom-right-radius:4px}.msg.assistant{background:var(--raised);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px;white-space:pre-wrap}.msg.system{border:1px solid var(--line);color:var(--muted);align-self:center;font-size:11px;padding:6px 10px}.msg.step{border-left:2px solid var(--accent);background:var(--accent-soft);align-self:flex-start;font:500 12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--muted)}.msg.result{background:#121416;border:1px solid var(--line);align-self:flex-start;font:500 11px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;color:var(--muted)}.msg.memory{background:var(--accent-soft);border:1px solid rgba(229,144,100,.26);align-self:flex-start;font-size:12px;color:#e8b89f}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:36px;color:var(--muted)}.empty-mark{width:58px;height:58px;display:grid;place-items:center;border:1px solid var(--line-strong);border-radius:16px;background:var(--raised);color:var(--accent);font:750 13px/1 ui-monospace,SFMono-Regular,Consolas,monospace;box-shadow:inset 0 1px rgba(255,255,255,.04)}.empty-state h2{font-size:22px;letter-spacing:-.025em;margin-top:18px;color:var(--text)}.empty-state p{font-size:13px;line-height:1.6;max-width:430px;margin-top:8px}.quick-prompts{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-top:20px}.quick-prompts button{border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--muted);padding:8px 10px;font-size:11px;cursor:pointer}.quick-prompts button:hover{border-color:rgba(229,144,100,.45);color:var(--accent);background:var(--accent-soft)}
+.chat-input-wrap{display:flex;align-items:flex-end;padding:13px 18px;background:var(--surface);border-top:1px solid var(--line);gap:8px}.chat-input-wrap textarea{flex:1;border:1px solid var(--line);border-radius:var(--control-radius);background:#111315;color:var(--text);padding:11px 12px;font-size:13px;resize:none;min-height:43px;max-height:120px}.chat-input-wrap textarea::placeholder,.memory-search input::placeholder{color:var(--subtle)}.chat-input-wrap textarea:hover{border-color:var(--line-strong)}.chat-input-wrap button{height:43px;border:0;border-radius:var(--control-radius);padding:0 18px;cursor:pointer;background:var(--accent);color:#24170f;font-size:12px;font-weight:700}.chat-input-wrap button:hover{background:var(--accent-hover)}
+.user-select-wrap{padding:12px 14px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:auto 1fr;align-items:center;gap:10px;font-size:11px;color:var(--subtle)}.user-select-wrap select,.memory-search input,.modal input,.modal textarea{width:100%;border:1px solid var(--line);border-radius:var(--control-radius);background:#111315;color:var(--text);padding:8px 10px;font-size:12px}.memory-search{padding:10px 14px;border-bottom:1px solid var(--line)}.memory-list{flex:1;overflow-y:auto;padding:10px}.memory-item{margin-bottom:7px;padding:11px;border-radius:var(--radius);background:var(--raised);border:1px solid var(--line);font-size:12px;line-height:1.5}.mem-meta{display:flex;justify-content:space-between;gap:8px;margin-top:8px;font:500 10px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--subtle)}.mem-del{cursor:pointer;color:var(--subtle);font-size:10px;background:none;border:none;padding:0}.mem-del:hover{color:var(--danger)}.mem-stars{color:var(--accent);letter-spacing:1px}.memory-empty{text-align:center;color:var(--subtle);font-size:11px;line-height:1.6;padding:32px 14px}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(8,9,10,.72);z-index:10;justify-content:center;align-items:center;padding:18px}.modal-overlay.show{display:flex}.modal{background:var(--raised);border:1px solid var(--line-strong);border-radius:var(--radius);padding:22px;width:480px;max-width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 24px 70px rgba(4,5,6,.45)}.modal h3{font-size:16px;margin-bottom:16px}.modal label{display:block;font-size:11px;color:var(--muted);margin:11px 0 6px}.modal textarea{min-height:88px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}.modal-result{background:#111315;border:1px solid var(--line);border-radius:var(--control-radius);padding:12px;margin-top:12px;font:500 11px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;max-height:220px;overflow-y:auto;display:none}
+.skeleton{height:118px;margin-bottom:8px;border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(100deg,var(--surface) 30%,var(--raised) 50%,var(--surface) 70%);background-size:240% 100%}
+::-webkit-scrollbar{width:7px;height:7px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:8px}
+@media (prefers-reduced-motion:no-preference){.msg{animation:fadeIn .22s cubic-bezier(.16,1,.3,1)}.skeleton{animation:shimmer 1.5s linear infinite}.tool-card{animation:fadeIn .25s cubic-bezier(.16,1,.3,1)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}@keyframes shimmer{to{background-position:-240% 0}}
+@media (max-width:1180px){.container{grid-template-columns:275px minmax(380px,1fr) 270px}.header-stats{gap:12px}}
+@media (max-width:960px){body{height:auto;overflow:auto}.container{flex:none;grid-template-columns:260px minmax(0,1fr);overflow:visible;min-height:calc(100dvh - 68px)}.panel-right{min-height:680px}.panel-memory{grid-column:1/-1;min-height:340px;border-left:0;border-top:1px solid var(--line)}.memory-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:8px}.memory-item{margin:0}}
+@media (max-width:720px){header{height:62px;padding:0 14px}.brand-sub,.header-stat:nth-child(2),.live-state{display:none}.container{grid-template-columns:1fr;min-height:0}.panel-left{border-right:0;border-bottom:1px solid var(--line)}.panel-left #tool-list{display:flex;gap:8px;padding:10px;overflow-x:auto}.tool-card{min-width:260px;margin:0}.panel-right{min-height:640px}.panel-memory{grid-column:auto}.memory-list{grid-template-columns:1fr}.chat-area{padding:16px}.chat-input-wrap{padding:10px}.empty-state{padding:24px}.quick-prompts{flex-direction:column;width:100%}.quick-prompts button{width:100%}.msg{max-width:92%}}
 </style>
 </head>
 <body>
 <header>
-  <span>🔧 MCP 工具市场</span>
-  <span class="badge">v1.0</span>
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true">MCP</div>
+    <div><div class="brand-name">MCP Tool Market</div><div class="brand-sub">Agent orchestration console</div></div>
+  </div>
+  <div class="header-stats" aria-label="运行概览">
+    <div class="header-stat"><strong id="connected-count">0</strong><span>已连接</span></div>
+    <div class="header-stat"><strong id="tool-count">0</strong><span>可用工具</span></div>
+    <div class="live-state"><span class="status-dot"></span><span>控制台在线</span></div>
+  </div>
 </header>
 <div class="container">
-  <div class="panel-left">
-    <div class="panel-header">📦 工具市场</div>
-    <div id="tool-list"></div>
-  </div>
-  <div class="panel-right">
-    <div class="panel-header">💬 AI 对话</div>
-    <div class="chat-area" id="chat-area">
+  <aside class="panel-left" aria-label="工具目录">
+    <div class="panel-header"><span class="panel-title">工具目录</span><span class="panel-meta" id="server-count">5 servers</span></div>
+    <div id="tool-list"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+  </aside>
+  <main class="panel-right">
+    <div class="panel-header"><span class="panel-title">Agent 工作台</span><button class="clear-btn" onclick="clearConversation()">清空会话</button></div>
+    <div class="chat-area" id="chat-area" aria-live="polite">
       <div class="empty-state" id="empty-state">
-        <div class="big-icon">🤖</div>
-        <div>连接左侧工具后，在下方输入问题开始体验</div>
-        <div style="font-size:12px;color:#dfe6e9">例如：北京天气如何？2.5kg等于多少磅？列出所有产品</div>
+        <div class="empty-mark" aria-hidden="true">MCP</div>
+        <h2>让 Agent 调用真实工具</h2>
+        <p>连接左侧服务，然后描述目标。调用过程、返回结果和长期记忆都会在这里呈现。</p>
+        <div class="quick-prompts">
+          <button onclick="fillPrompt('查询北京当前天气')">查询北京天气</button>
+          <button onclick="fillPrompt('计算 2.5kg 等于多少磅')">换算 2.5kg</button>
+          <button onclick="fillPrompt('查询数据库中库存最少的三个产品')">检查产品库存</button>
+        </div>
       </div>
     </div>
     <div class="chat-input-wrap">
+      <label class="sr-only" for="chat-input">消息</label>
       <textarea id="chat-input" placeholder="输入消息..." rows="1"></textarea>
       <button id="send-btn" onclick="sendMessage()">发送</button>
     </div>
-  </div>
-  <div class="panel-memory">
-    <div class="panel-header">🧠 记忆面板</div>
+  </main>
+  <aside class="panel-memory" aria-label="长期记忆">
+    <div class="panel-header"><span class="panel-title">长期记忆</span><span class="panel-meta">semantic store</span></div>
     <div class="user-select-wrap">
-      <span>👤 用户</span>
+      <label for="user-select">当前用户</label>
       <select id="user-select" onchange="switchUser()">
         <option value="default">default</option>
         <option value="alice">alice</option>
@@ -115,33 +82,38 @@ button:disabled{opacity:.5;cursor:not-allowed}.panel-right{flex:1;display:flex;f
       </select>
     </div>
     <div class="memory-search">
-      <input id="memory-search-input" placeholder="🔍 搜索记忆..." oninput="debounceSearchMemories()">
+      <label class="sr-only" for="memory-search-input">搜索记忆</label>
+      <input id="memory-search-input" placeholder="搜索记忆..." oninput="debounceSearchMemories()">
     </div>
     <div class="memory-list" id="memory-list">
-      <div class="memory-empty">暂无记忆<br>和 AI 聊聊天，它会自动记住重要信息</div>
+      <div class="memory-empty">暂无记忆<br>对话中的长期信息会显示在这里</div>
     </div>
-  </div>
+  </aside>
 </div>
 
 <div class="modal-overlay" id="test-modal">
-  <div class="modal">
-    <h3>🧪 测试工具</h3>
-    <label>工具</label>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="test-modal-title">
+    <h3 id="test-modal-title">测试工具</h3>
+    <label for="test-tool-name">工具</label>
     <input id="test-tool-name" readonly>
-    <label>参数 (JSON)</label>
+    <label for="test-params">参数 (JSON)</label>
     <textarea id="test-params" rows="3">{}</textarea>
     <div class="modal-actions">
-      <button onclick="closeTestModal()" style="background:#dfe6e9">取消</button>
-      <button onclick="runTest()" style="background:#6c5ce7;color:white">运行</button>
+      <button onclick="closeTestModal()">取消</button>
+      <button class="btn-run" onclick="runTest()">运行</button>
     </div>
-    <div id="test-result" class="modal-result"></div>
+    <div id="test-result" class="modal-result" aria-live="polite"></div>
   </div>
 </div>
 
 <script>
-const TOOL_ICONS = {file:"📁",weather:"🌤️",calculator:"🧮",database:"🗄️",memory:"🧠"};
+const TOOL_ICONS = {file:"FILE",weather:"WX",calculator:"CALC",database:"SQL",memory:"MEM"};
 let testServer = "", testTool = "";
 let conversationMessages = [];
+let lastFocused = null;
+const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({
+  "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+})[char]);
 
 function autoResize(el) {
   el.style.height = "auto";
@@ -153,26 +125,49 @@ document.getElementById("chat-input").addEventListener("keydown", function(e){
 });
 
 async function fetchTools() {
-  let res;
-  try { res = await fetch("/api/tools"); } catch(e) { return; }
-  const data = await res.json();
   const list = document.getElementById("tool-list");
+  let data;
+  try {
+    const res = await fetch("/api/tools");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    data = await res.json();
+  } catch(e) {
+    list.innerHTML = '<div class="memory-empty">无法读取工具状态<br>请确认后端服务已启动</div>';
+    return;
+  }
   if (!data || typeof data !== "object") return;
+  const servers = Object.entries(data);
+  const connectedCount = servers.filter(([, tool]) => tool.status === "connected").length;
+  const toolCount = servers.reduce((sum, [, tool]) => sum + (tool.tools?.length || 0), 0);
+  document.getElementById("connected-count").textContent = connectedCount;
+  document.getElementById("tool-count").textContent = toolCount;
+  document.getElementById("server-count").textContent = `${servers.length} servers`;
   list.innerHTML = "";
-  for (const [key, t] of Object.entries(data)) {
+  for (const [key, t] of servers) {
     const isConnected = t.status === "connected";
     const isError = t.status && t.status.startsWith("error");
     const dotClass = isConnected ? "dot-connected" : isError ? "dot-error" : "dot-disconnected";
     const statusText = isConnected ? "已连接" : isError ? "错误" : "未连接";
+    const permissions = Array.isArray(t.permissions) ? t.permissions : [];
+    const examples = Array.isArray(t.examples) ? t.examples : [];
     const card = document.createElement("div");
     card.className = "tool-card";
     card.innerHTML = `
       <div class="card-header">
-        <span><span class="card-icon">${TOOL_ICONS[key]||"🔧"}</span><span class="card-name">${t.label}</span></span>
+        <span class="card-identity"><span class="card-icon">${TOOL_ICONS[key]||"MCP"}</span><span class="card-name">${escapeHtml(t.label)}</span></span>
         <span class="status-text"><span class="status-dot ${dotClass}"></span>${statusText}</span>
       </div>
+      <div class="market-summary">${escapeHtml(t.summary || "")}</div>
+      <div class="market-grid">
+        <div class="market-pill"><span>类别</span><strong>${escapeHtml(t.category || "Tool")}</strong></div>
+        <div class="market-pill"><span>风险</span><strong>${escapeHtml(t.risk || "未标注")}</strong></div>
+      </div>
+      <div class="permission-tags">
+        ${permissions.map(item => `<span class="permission-tag">${escapeHtml(item)}</span>`).join("")}
+      </div>
+      <div class="example-line">示例：${escapeHtml(examples.slice(0,2).join(" / ") || "连接后查看工具 schema")}</div>
       <div class="tools-list">
-        ${t.tools && t.tools.length ? t.tools.map(tt => `<span>${tt.name}</span>`).join("") : '<span style="background:transparent;color:#b2bec3;padding:0">—</span>'}
+        ${t.tools && t.tools.length ? t.tools.map(tt => `<button class="tool-chip" onclick="openTestModal('${key}','${tt.name}')">${escapeHtml(tt.name)}</button>`).join("") : '<span class="tools-empty">连接后读取工具</span>'}
       </div>
       <div class="actions">
         ${isConnected
@@ -186,32 +181,38 @@ async function fetchTools() {
 }
 
 async function connectTool(name) {
-  addMsg(`🔌 正在连接 ${name}...`, "system");
+  addMsg(`正在连接 ${name}...`, "system");
   try {
-    await fetch("/api/tools/connect", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});
-  } catch(e) {}
+    const res = await fetch("/api/tools/connect", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});
+    const data = await res.json();
+    addMsg(data.success ? `${name} 已连接` : `${name} 连接失败：${data.status || "未知错误"}`, "system");
+  } catch(e) { addMsg(`${name} 连接失败：${e.message}`, "system"); }
   fetchTools();
 }
 
 async function disconnectTool(name) {
-  addMsg(`🔌 已断开 ${name}`, "system");
   try {
-    await fetch("/api/tools/disconnect", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});
-  } catch(e) {}
+    const res = await fetch("/api/tools/disconnect", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});
+    const data = await res.json();
+    addMsg(data.success ? `${name} 已断开` : `${name} 当前未连接`, "system");
+  } catch(e) { addMsg(`${name} 断开失败：${e.message}`, "system"); }
   fetchTools();
 }
 
 function openTestModal(server, tool) {
+  lastFocused = document.activeElement;
   testServer = server; testTool = tool;
   document.getElementById("test-tool-name").value = `${server}/${tool}`;
   document.getElementById("test-params").value = "{}";
   const r = document.getElementById("test-result");
   r.style.display = "none"; r.textContent = "";
   document.getElementById("test-modal").classList.add("show");
+  document.getElementById("test-params").focus();
 }
 
 function closeTestModal() {
   document.getElementById("test-modal").classList.remove("show");
+  if (lastFocused) lastFocused.focus();
 }
 
 async function runTest() {
@@ -219,11 +220,11 @@ async function runTest() {
   try { args = JSON.parse(document.getElementById("test-params").value); }
   catch(e) { alert("JSON 格式错误"); return; }
   const r = document.getElementById("test-result");
-  r.style.display = "block"; r.textContent = "⏳ 调用中...";
+  r.style.display = "block"; r.textContent = "调用中...";
   try {
-    const res = await fetch("/api/tools/test", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({server:testServer,tool:testTool,arguments:args})});
+    const res = await fetch("/api/tools/test", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({server:testServer,tool:testTool,arguments:args,user_id:currentUser})});
     const data = await res.json();
-    r.textContent = data.result || "(无返回)";
+    r.textContent = data.error ? "调用失败：" + data.error : data.result || "(无返回)";
   } catch(e) { r.textContent = "请求失败: " + e.message; }
 }
 
@@ -233,11 +234,25 @@ function addMsg(content, type) {
   if (empty) empty.style.display = "none";
   const div = document.createElement("div");
   div.className = "msg " + type;
-  if (type === "step") div.innerHTML = content;
-  else div.textContent = content;
+  div.textContent = content;
   area.appendChild(div);
   area.scrollTop = area.scrollHeight;
   return div;
+}
+
+function fillPrompt(text) {
+  const input = document.getElementById("chat-input");
+  input.value = text;
+  autoResize(input);
+  input.focus();
+}
+
+function clearConversation() {
+  conversationMessages = [];
+  const area = document.getElementById("chat-area");
+  for (const child of [...area.children]) if (child.id !== "empty-state") child.remove();
+  const empty = document.getElementById("empty-state");
+  if (empty) empty.style.display = "flex";
 }
 
 let streaming = false;
@@ -258,7 +273,7 @@ async function sendMessage() {
 
   try {
     const res = await fetch("/api/chat", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages: conversationMessages, user_id: currentUser})});
-    if (!res.ok) { addMsg("❌ 请求失败: " + res.status, "step"); return; }
+    if (!res.ok) { addMsg("请求失败: " + res.status, "step"); return; }
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buf = "";
@@ -277,7 +292,7 @@ async function sendMessage() {
             else if (ev.type === "tool_call") addMsg(ev.content, "step");
             else if (ev.type === "memory_recall") {
               var memories = ev.memories || [];
-              addMsg("🧠 " + ev.content + "：" + memories.join("；"), "memory");
+              addMsg(ev.content + "：" + memories.join("；"), "memory");
             }
             else if (ev.type === "tool_result") addMsg(ev.content, "result");
             else if (ev.type === "final") {
@@ -299,7 +314,7 @@ async function sendMessage() {
     }
     setTimeout(fetchMemories, 4000);
   } catch(err) {
-    addMsg("❌ 连接失败: " + err.message, "step");
+    addMsg("连接失败: " + err.message, "step");
   } finally {
     streaming = false;
     btn.disabled = false; btn.textContent = "发送";
@@ -322,9 +337,10 @@ function switchUser() {
 async function fetchMemories() {
   try {
     const res = await fetch("/api/memories?user_id=" + encodeURIComponent(currentUser));
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     renderMemories(data.memories || []);
-  } catch(e) {}
+  } catch(e) { renderMemoryError(); }
 }
 
 function debounceSearchMemories() {
@@ -337,15 +353,20 @@ async function searchMemories() {
   if (!q) { fetchMemories(); return; }
   try {
     const res = await fetch("/api/memories/search?q=" + encodeURIComponent(q) + "&user_id=" + encodeURIComponent(currentUser));
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     renderMemories(data.results || []);
-  } catch(e) {}
+  } catch(e) { renderMemoryError(); }
+}
+
+function renderMemoryError() {
+  document.getElementById("memory-list").innerHTML = '<div class="memory-empty">记忆服务暂不可用<br>启动 memory-server 后重试</div>';
 }
 
 function renderMemories(mems) {
   const list = document.getElementById("memory-list");
   if (!mems || !mems.length) {
-    list.innerHTML = '<div class="memory-empty">暂无记忆<br>和 AI 聊聊天，它会自动记住重要信息</div>';
+    list.innerHTML = '<div class="memory-empty">暂无记忆<br>对话中的长期信息会显示在这里</div>';
     return;
   }
   list.innerHTML = mems.map(function(m) {
@@ -355,20 +376,29 @@ function renderMemories(mems) {
     var date = (m.updated_at || m.created_at || "").slice(0, 10);
     var scoreStr = (m.score !== undefined) ? " · 相关度 " + Math.round(m.score * 100) + "%" : "";
     return '<div class="memory-item">' +
-      m.content +
+      escapeHtml(m.content) +
       '<div class="mem-meta">' +
         '<span class="mem-stars">' + stars + '</span>' +
-        '<span>' + date + scoreStr + ' <button class="mem-del" onclick="deleteMemory(\'' + m.id + '\')">删除</button></span>' +
+        '<span>' + escapeHtml(date + scoreStr) + ' <button class="mem-del" onclick="deleteMemory(\'' + m.id + '\')">删除</button></span>' +
       '</div></div>';
   }).join("");
 }
 
 async function deleteMemory(id) {
+  if (!confirm("确认删除这条记忆？")) return;
   try {
-    await fetch("/api/memories/" + id, {method: "DELETE"});
+    const res = await fetch("/api/memories/" + id + "?user_id=" + encodeURIComponent(currentUser), {method: "DELETE"});
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     fetchMemories();
-  } catch(e) {}
+  } catch(e) { renderMemoryError(); }
 }
+
+document.getElementById("test-modal").addEventListener("click", function(e) {
+  if (e.target === this) closeTestModal();
+});
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape" && document.getElementById("test-modal").classList.contains("show")) closeTestModal();
+});
 
 fetchMemories();
 </script>

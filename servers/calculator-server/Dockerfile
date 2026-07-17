@@ -9,4 +9,6 @@ COPY server.py .
 
 EXPOSE 8003
 
+ENV HOST=0.0.0.0
+
 CMD ["python", "server.py"]

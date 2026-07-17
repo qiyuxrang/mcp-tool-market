@@ -10,5 +10,6 @@ COPY *.py ./
 EXPOSE 8005
 
 ENV PORT=8005
+ENV HOST=0.0.0.0
 
 CMD ["python", "server.py"]

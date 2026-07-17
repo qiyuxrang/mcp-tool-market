@@ -1,6 +1,6 @@
 # MCP 工具市场
 
-基于 Model Context Protocol 的标准化 AI 工具集合平台。包含 5 个 MCP Server、Agent 引擎和 Web 管理界面。
+基于 Model Context Protocol 的标准化 AI 工具集合平台。包含 5 个 MCP Server、Agent 引擎和 Web 管理界面，并展示每个工具的类别、风险等级、权限边界和调用示例。
 
 ## 功能
 
@@ -12,6 +12,10 @@
 | 🗄️ 数据库查询工具 | 基于 SQLite 的结构化数据查询（SELECT-only） |
 | 🧠 记忆与知识库 | Agent 长期记忆；文档切块、语义检索与来源引用（ChromaDB 持久化） |
 
+Web 管理界面会把工具按市场卡片展示：连接状态、工具 schema、权限说明、安全边界和示例问题都在同一张卡片里，便于解释 Agent 工具治理。
+
+> 安全边界：当前是本地演示系统，没有登录认证。`user_id` 只用于逻辑分区，不能当作生产级租户隔离；Docker 默认只把 Web 后端绑定到本机回环地址，MCP Server 仅在 Compose 内部网络可见。
+
 ## RAG 场景演示
 
 连接“记忆系统”后，可以直接对 Agent 说：
@@ -20,12 +24,13 @@
 2. `根据知识库回答：出差住宿每晚最多报销多少？请标注来源。`
 
 Agent 会先调用 `index_knowledge` 写入文档，再调用 `search_knowledge` 检索片段，并基于来源回答。
+知识库是演示环境内共享语料，不按 `user_id` 分区；低于 `KNOWLEDGE_MIN_SCORE` 的片段不会返回，该阈值需要随 embedding 模型和真实评测校准。
 
 运行知识库回归评测：
 
 ```bash
 cd servers/memory-server
-python evaluate_knowledge.py       # 离线，无需 API
+python evaluate_knowledge.py       # 离线管线回归，无需 API；不代表真实语义质量
 python evaluate_knowledge.py live  # 使用当前环境变量配置的 Embedding API
 ```
 
@@ -33,11 +38,10 @@ python evaluate_knowledge.py live  # 使用当前环境变量配置的 Embedding
 
 ### 开发模式
 
-```bash
-cd backend
-cp .env.example .env   # 编辑填入你的中转站 API 配置
-pip install -r requirements.txt
-cd ..
+```powershell
+Copy-Item backend/.env.example backend/.env
+# 编辑 backend/.env，填入 OpenAI 兼容 API 配置
+python -m pip install -r backend/requirements.txt -r servers/memory-server/requirements.txt
 python run.py          # 一键启动所有服务
 ```
 
@@ -45,9 +49,20 @@ python run.py          # 一键启动所有服务
 
 ### Docker 部署
 
-```bash
-cp backend/.env.example backend/.env
-docker-compose up -d
+```powershell
+Copy-Item backend/.env.example backend/.env
+# 编辑 backend/.env，填入 OpenAI 兼容 API 配置
+docker compose up -d --build
+```
+
+`.env` 可省略以便先启动和测试 MCP 工具；AI 对话、语义记忆与知识库功能需要有效的 API Key 和支持的 Chat/Embedding 模型。
+
+### 自检
+
+```powershell
+python smoke_test.py
+python servers/memory-server/evaluate_knowledge.py
+docker compose config --quiet
 ```
 
 ## 技术架构

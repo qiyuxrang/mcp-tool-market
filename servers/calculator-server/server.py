@@ -31,13 +31,27 @@ ALLOWED_UNARY = {
     ast.USub: operator.neg,
 }
 
+MAX_EXPRESSION_LENGTH = 200
+MAX_AST_NODES = 100
+MAX_EXPONENT = 1000
+MAX_RESULT_BITS = 4096
+
+
+def _check_number(value):
+    """Reject non-finite or excessively large intermediate results."""
+    if type(value) not in (int, float):
+        raise ValueError(f"Unsupported constant: {value!r}")
+    if isinstance(value, float) and not math.isfinite(value):
+        raise ValueError("Result is not finite")
+    if isinstance(value, int) and value.bit_length() > MAX_RESULT_BITS:
+        raise ValueError("Result is too large")
+    return value
+
 
 def _eval_node(node):
     """Recursively evaluate an AST node, allowing only safe operations."""
     if isinstance(node, ast.Constant):
-        if isinstance(node.value, (int, float)):
-            return node.value
-        raise ValueError(f"Unsupported constant: {node.value!r}")
+        return _check_number(node.value)
 
     if isinstance(node, ast.UnaryOp):
         operand = _eval_node(node.operand)
@@ -52,17 +66,29 @@ def _eval_node(node):
         op_type = type(node.op)
         if op_type not in ALLOWED_OPERATORS:
             raise ValueError(f"Unsupported operator: {op_type.__name__}")
+        if op_type is ast.Pow:
+            if abs(right) > MAX_EXPONENT:
+                raise ValueError("Exponent is too large")
+            if isinstance(left, int) and isinstance(right, int) and right > 0:
+                if left and left.bit_length() * right > MAX_RESULT_BITS:
+                    raise ValueError("Result is too large")
         try:
-            return ALLOWED_OPERATORS[op_type](left, right)
+            return _check_number(ALLOWED_OPERATORS[op_type](left, right))
         except ZeroDivisionError:
             raise ValueError("Division by zero")
+        except OverflowError:
+            raise ValueError("Result is too large")
 
     raise ValueError(f"Unsupported expression node: {type(node).__name__}")
 
 
 def safe_eval(expr: str):
     """Parse and safely evaluate a mathematical expression string using AST."""
+    if len(expr) > MAX_EXPRESSION_LENGTH:
+        raise ValueError("Expression is too long")
     tree = ast.parse(expr.strip(), mode="eval")
+    if sum(1 for _ in ast.walk(tree)) > MAX_AST_NODES:
+        raise ValueError("Expression is too complex")
     try:
         return _eval_node(tree.body)
     except RecursionError:
@@ -263,4 +289,4 @@ def unit_convert(value: float, from_unit: str, to_unit: str) -> str:
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8003))
     import uvicorn
-    uvicorn.run(mcp.sse_app(), host="0.0.0.0", port=port)
+    uvicorn.run(mcp.sse_app(), host=os.getenv("HOST", "127.0.0.1"), port=port)

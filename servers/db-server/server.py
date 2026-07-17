@@ -2,6 +2,7 @@
 import json
 import os
 import sqlite3
+from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 
@@ -22,8 +23,10 @@ mcp = FastMCP("DB Server")
 
 
 def _get_conn():
-    conn = sqlite3.connect(DB_PATH, timeout=5)
+    uri = Path(DB_PATH).resolve().as_uri() + "?mode=ro"
+    conn = sqlite3.connect(uri, uri=True, timeout=5)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA query_only = ON")
     return conn
 
 
@@ -95,4 +98,4 @@ def query_db(sql: str) -> str:
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8004"))
     import uvicorn
-    uvicorn.run(mcp.sse_app(), host="0.0.0.0", port=port)
+    uvicorn.run(mcp.sse_app(), host=os.getenv("HOST", "127.0.0.1"), port=port)

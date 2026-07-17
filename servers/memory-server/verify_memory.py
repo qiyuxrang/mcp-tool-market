@@ -18,7 +18,7 @@ def verify_store():
     uid = "verify-user"
     # 清理旧数据
     for m in memory_store.list_memories(uid):
-        memory_store.delete_memory(m["id"])
+        memory_store.delete_memory(m["id"], uid)
 
     m1 = memory_store.add_memory("用户在西安", fake_vec(0.1), uid, importance=0.7)
     m2 = memory_store.add_memory("用户喜欢摄影", fake_vec(0.5), uid, importance=0.9)
@@ -27,18 +27,18 @@ def verify_store():
     results = memory_store.search_memories(fake_vec(0.1), uid, top_k=1)
     assert results and results[0]["id"] == m1["id"], "search failed"
 
-    ok = memory_store.update_memory(m1["id"], "用户搬到杭州了", fake_vec(0.2))
+    ok = memory_store.update_memory(m1["id"], "用户搬到杭州了", fake_vec(0.2), uid)
     assert ok, "update failed"
     listed = memory_store.list_memories(uid)
     contents = [m["content"] for m in listed]
     assert "用户搬到杭州了" in contents, "update content not applied"
 
-    assert memory_store.delete_memory(m2["id"]), "delete failed"
+    assert memory_store.delete_memory(m2["id"], uid), "delete failed"
     assert len(memory_store.list_memories(uid)) == 1, "delete count wrong"
 
     # 清理
     for m in memory_store.list_memories(uid):
-        memory_store.delete_memory(m["id"])
+        memory_store.delete_memory(m["id"], uid)
     print("[PASS] store layer OK")
 
 
@@ -46,7 +46,7 @@ async def verify_pipeline():
     import pipeline
     uid = "verify-pipeline-user"
     for m in memory_store.list_memories(uid):
-        memory_store.delete_memory(m["id"])
+        memory_store.delete_memory(m["id"], uid)
 
     convo = [
         {"role": "user", "content": "你好，我叫小张，我对花生过敏，帮我记住"},

@@ -3,16 +3,18 @@ import os
 
 from mcp.server.fastmcp import FastMCP
 
-SANDBOX = os.path.abspath("./workspace")
+SANDBOX = os.path.realpath("./workspace")
 MAX_FILE_SIZE = 1 * 1024 * 1024  # 1MB
 
 
 def safe_path(path: str) -> str:
     """Resolve the full path and ensure it is within the sandbox directory."""
-    if ".." in path.split(os.sep) or ".." in path.split("/"):
-        raise ValueError(f"Path traversal detected in: {path}")
-    resolved = os.path.abspath(os.path.join(SANDBOX, path))
-    if not resolved.startswith(SANDBOX + os.sep) and resolved != SANDBOX:
+    resolved = os.path.realpath(os.path.join(SANDBOX, path))
+    try:
+        inside_sandbox = os.path.commonpath((SANDBOX, resolved)) == SANDBOX
+    except ValueError:
+        inside_sandbox = False
+    if not inside_sandbox:
         raise ValueError(f"Access denied: path is outside the sandbox: {resolved}")
     return resolved
 
@@ -44,8 +46,10 @@ def write_file(path: str, content: str) -> str:
     """Write content to a file within the sandbox."""
     try:
         full_path = safe_path(path)
-        os.makedirs(os.path.dirname(full_path), exist_ok=True)
         data = content.encode("utf-8")
+        if len(data) > MAX_FILE_SIZE:
+            return f"File too large: {len(data)} bytes (max {MAX_FILE_SIZE} bytes)"
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
         with open(full_path, "wb") as f:
             f.write(data)
         return f"Written {len(data)} bytes to {path}"
@@ -77,4 +81,4 @@ def list_dir(path: str = "") -> str:
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8001))
     import uvicorn
-    uvicorn.run(mcp.sse_app(), host="0.0.0.0", port=port)
+    uvicorn.run(mcp.sse_app(), host=os.getenv("HOST", "127.0.0.1"), port=port)
