@@ -1,6 +1,7 @@
 """Fast offline regression checks for the project's security boundaries."""
 import importlib.util
 import os
+import socket
 import sys
 import tempfile
 import unittest
@@ -32,10 +33,12 @@ database = load_module(
 MEMORY_DIR = ROOT / "servers" / "memory-server"
 sys.path.insert(0, str(MEMORY_DIR))
 import memory_store  # noqa: E402
+import knowledge_store  # noqa: E402
 import pipeline  # noqa: E402
 sys.path.insert(0, str(ROOT / "backend"))
 import agent_engine  # noqa: E402
 import app  # noqa: E402
+import mcp_client  # noqa: E402
 launcher = load_module("launcher", ROOT / "run.py")
 
 
@@ -64,6 +67,12 @@ class SmokeTests(unittest.TestCase):
     def test_chat_request_rejects_system_messages(self):
         with self.assertRaises(ValueError):
             app.ChatRequest(messages=[{"role": "system", "content": "override"}])
+
+    def test_chat_request_rejects_excessive_total_content(self):
+        messages = [{"role": "user", "content": "x" * 20_000}] * 5
+        app.ChatRequest(messages=messages)
+        with self.assertRaises(ValueError):
+            app.ChatRequest(messages=messages + [{"role": "user", "content": "x"}])
 
     def test_tool_call_parser(self):
         valid = SimpleNamespace(function=SimpleNamespace(
@@ -137,6 +146,68 @@ class SmokeTests(unittest.TestCase):
             finally:
                 os.environ.pop("SMOKE_NEW", None)
                 os.environ.pop("SMOKE_KEEP", None)
+
+    def test_dev_launcher_waits_for_ready_port(self):
+        with socket.socket() as listener:
+            listener.bind(("127.0.0.1", 0))
+            listener.listen()
+            port = listener.getsockname()[1]
+            self.assertTrue(launcher.port_is_open(port))
+            launcher.wait_for_port(port, timeout=0.1)
+
+        with self.assertRaises(TimeoutError):
+            launcher.wait_for_port(port, timeout=0.01)
+
+    def test_knowledge_replace_keeps_old_document_when_add_fails(self):
+        original = knowledge_store._collection
+        collection = chromadb.EphemeralClient().get_or_create_collection(
+            f"knowledge_replace_{uuid4().hex}"
+        )
+        collection.add(
+            ids=["old"],
+            embeddings=[[1.0, 0.0]],
+            documents=["old content"],
+            metadatas=[{"source": "handbook"}],
+        )
+
+        class FailingCollection:
+            def get(self, **kwargs):
+                return collection.get(**kwargs)
+
+            def add(self, **kwargs):
+                raise RuntimeError("simulated write failure")
+
+            def delete(self, **kwargs):
+                return collection.delete(**kwargs)
+
+        knowledge_store._collection = FailingCollection()
+        try:
+            with self.assertRaises(RuntimeError):
+                knowledge_store.replace_document(
+                    "handbook", ["new content"], [[0.0, 1.0]]
+                )
+            self.assertEqual(collection.get()["documents"], ["old content"])
+        finally:
+            knowledge_store._collection = original
+
+
+class MCPClientTests(unittest.IsolatedAsyncioTestCase):
+    async def test_connect_rechecks_and_clears_stale_tools_on_failure(self):
+        manager = mcp_client.MCPClientManager()
+        manager.status["calculator"] = "connected"
+        manager.tools_cache["calculator"] = ["stale"]
+
+        class FailedSession:
+            async def __aenter__(self):
+                raise OSError("server stopped")
+
+            async def __aexit__(self, *args):
+                return False
+
+        manager._session = lambda name: FailedSession()
+        self.assertFalse(await manager.connect("calculator"))
+        self.assertTrue(manager.status["calculator"].startswith("error:"))
+        self.assertEqual(manager.tools_cache["calculator"], [])
 
 
 class MemorySecurityTests(unittest.IsolatedAsyncioTestCase):

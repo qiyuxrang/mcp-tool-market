@@ -35,19 +35,29 @@ def replace_document(source: str, chunks: list[str], vectors: list[list[float]])
     if not chunks or len(chunks) != len(vectors):
         raise ValueError("chunks 与 vectors 必须非空且数量一致")
 
-    _collection.delete(where={"source": source})
+    old_ids = _collection.get(where={"source": source})["ids"]
     now = datetime.now(timezone.utc).isoformat()
     ids = [str(uuid.uuid4()) for _ in chunks]
     metadatas = [
         {"source": source, "chunk_index": i, "created_at": now}
         for i in range(len(chunks))
     ]
-    _collection.add(
-        ids=ids,
-        embeddings=vectors,
-        documents=chunks,
-        metadatas=metadatas,
-    )
+    try:
+        _collection.add(
+            ids=ids,
+            embeddings=vectors,
+            documents=chunks,
+            metadatas=metadatas,
+        )
+    except Exception:
+        # Chroma normally writes atomically; cleanup also covers partial writes.
+        try:
+            _collection.delete(ids=ids)
+        except Exception:
+            pass
+        raise
+    if old_ids:
+        _collection.delete(ids=old_ids)
     return len(chunks)
 
 

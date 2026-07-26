@@ -9,12 +9,13 @@ import httpx
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from mcp_client import MCPClientManager, SERVER_REGISTRY
 from agent_engine import AgentEngine
 
 logger = logging.getLogger(__name__)
+MAX_CHAT_CONTENT_CHARS = 100_000
 
 
 # ---------------------------------------------------------------------------
@@ -29,6 +30,13 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     messages: list[ChatMessage] = Field(min_length=1, max_length=100)
     user_id: str = Field(default="default", min_length=1, max_length=100)
+
+    @model_validator(mode="after")
+    def limit_total_content(self):
+        total = sum(len(message.content) for message in self.messages)
+        if total > MAX_CHAT_CONTENT_CHARS:
+            raise ValueError(f"对话总长度不能超过 {MAX_CHAT_CONTENT_CHARS} 个字符")
+        return self
 
 
 class ConnectRequest(BaseModel):

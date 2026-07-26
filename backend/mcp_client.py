@@ -83,8 +83,6 @@ class MCPClientManager:
         """Connect to an MCP Server by name using SSE transport."""
         if name not in SERVER_REGISTRY:
             return False
-        if self.status.get(name) == "connected":
-            return True
         try:
             async with self._session(name) as session:
                 tools_result = await session.list_tools()
@@ -93,6 +91,7 @@ class MCPClientManager:
             return True
         except Exception as e:
             self.status[name] = f"error: {e}"
+            self.tools_cache[name] = []
             return False
 
     async def disconnect(self, name: str) -> bool:
