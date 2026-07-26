@@ -9,20 +9,21 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
 body{font-family:"Segoe UI Variable","SF Pro Display","Noto Sans SC",system-ui,sans-serif;min-height:100dvh;display:flex;flex-direction:column;overflow:hidden;background:radial-gradient(circle at 52% -20%,rgba(229,144,100,.1),transparent 34%),var(--bg);color:var(--text)}
-button,input,textarea,select{font:inherit}button{white-space:nowrap}button:disabled{opacity:.45;cursor:not-allowed}
+button,input,textarea,select{font:inherit}button{white-space:nowrap}button:disabled{opacity:.45;cursor:not-allowed}button:not(:disabled):active{transform:translateY(1px)}
 button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 header{height:68px;flex:none;padding:0 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:rgba(16,18,20,.94)}
 .brand{display:flex;align-items:center;gap:12px}.brand-mark{width:38px;height:38px;border:1px solid rgba(229,144,100,.5);border-radius:11px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font:700 13px/1 ui-monospace,SFMono-Regular,Consolas,monospace}.brand-name{font-size:15px;font-weight:680;letter-spacing:-.01em}.brand-sub{color:var(--subtle);font-size:11px;margin-top:2px}
-.header-stats{display:flex;align-items:center;gap:18px}.header-stat{display:grid;grid-template-columns:auto auto;align-items:baseline;gap:6px}.header-stat strong{font:650 15px/1 ui-monospace,SFMono-Regular,Consolas,monospace}.header-stat span{font-size:11px;color:var(--subtle)}.live-state{display:flex;align-items:center;gap:7px;padding-left:18px;border-left:1px solid var(--line);color:var(--muted);font-size:12px}.live-state .status-dot{width:7px;height:7px;background:var(--success);border-radius:50%}
+.header-stats{display:flex;align-items:center;gap:18px}.header-stat{display:grid;grid-template-columns:auto auto;align-items:baseline;gap:6px}.header-stat strong{font:650 15px/1 ui-monospace,SFMono-Regular,Consolas,monospace}.header-stat span{font-size:11px;color:var(--subtle)}.live-state{display:flex;align-items:center;gap:7px;padding-left:18px;border-left:1px solid var(--line);color:var(--muted);font-size:12px}.live-state .status-dot{width:7px;height:7px;background:var(--subtle);border-radius:50%}.live-state[data-state="partial"] .status-dot{background:var(--warning)}.live-state[data-state="ready"] .status-dot{background:var(--success)}
 .container{display:grid;grid-template-columns:310px minmax(420px,1fr) 310px;flex:1;min-height:0;overflow:hidden}.panel-left,.panel-right,.panel-memory{min-width:0;min-height:0}.panel-left,.panel-memory{display:flex;flex-direction:column;background:var(--surface)}.panel-left{border-right:1px solid var(--line)}.panel-memory{border-left:1px solid var(--line)}
-.panel-header{height:57px;flex:none;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.panel-title{font-size:13px;font-weight:650}.panel-meta{font:500 10px/1 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--subtle)}.clear-btn{border:0;background:transparent;color:var(--subtle);font-size:11px;cursor:pointer;padding:7px 9px;border-radius:8px}.clear-btn:hover{background:var(--hover);color:var(--text)}
+.panel-header{height:57px;flex:none;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.panel-title{font-size:13px;font-weight:650}.panel-meta{font:500 10px/1 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--subtle)}.panel-actions{display:flex;align-items:center;gap:8px}.clear-btn,.prepare-btn{border:0;background:transparent;color:var(--subtle);font-size:11px;cursor:pointer;padding:7px 9px;border-radius:8px}.clear-btn:hover{background:var(--hover);color:var(--text)}.prepare-btn{border:1px solid rgba(229,144,100,.34);background:var(--accent-soft);color:#e8b89f}.prepare-btn:hover{border-color:rgba(229,144,100,.58);color:var(--accent)}
 #tool-list{padding:10px;overflow-y:auto}.tool-card{padding:13px;margin-bottom:8px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);transition:border-color .2s ease,background .2s ease,transform .2s ease}.tool-card:hover{border-color:var(--line-strong);background:var(--raised);transform:translateY(-1px)}.card-header{display:flex;align-items:center;justify-content:space-between;gap:10px}.card-identity{display:flex;align-items:center;min-width:0}.card-icon{width:34px;height:34px;flex:none;margin-right:10px;border-radius:9px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font:700 10px/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.02em}.card-name{font-size:13px;font-weight:650}.status-text{font-size:10px;color:var(--muted);display:inline-flex;align-items:center;gap:6px}.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block}.dot-connected{background:var(--success)}.dot-disconnected{background:var(--subtle)}.dot-error{background:var(--danger)}
 .tools-list{margin:11px 0;display:flex;flex-wrap:wrap;gap:5px}.tool-chip{border:1px solid var(--line);background:transparent;color:var(--muted);padding:4px 7px;border-radius:7px;font:500 10px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;cursor:pointer}.tool-chip:hover{border-color:rgba(229,144,100,.45);color:var(--accent);background:var(--accent-soft)}.tools-empty{color:var(--subtle);font-size:11px}.actions{display:flex;gap:6px}.actions button,.modal-actions button{border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:var(--raised);color:var(--muted);font-size:11px;font-weight:600;cursor:pointer}.actions button:hover,.modal-actions button:hover{border-color:var(--line-strong);color:var(--text)}.actions .btn-connect,.modal-actions .btn-run{border-color:transparent;background:var(--accent);color:#24170f}.actions .btn-connect:hover,.modal-actions .btn-run:hover{background:var(--accent-hover);color:#24170f}.actions .btn-disconnect:hover{border-color:rgba(217,122,122,.5);color:var(--danger)}
 .market-summary{margin-top:9px;color:var(--muted);font-size:11px;line-height:1.5}.market-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px}.market-pill{border:1px solid var(--line);border-radius:8px;padding:6px 7px;background:#111315}.market-pill span{display:block;color:var(--subtle);font-size:9px;margin-bottom:3px}.market-pill strong{display:block;color:var(--text);font-size:11px;font-weight:650}.permission-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}.permission-tag{border:1px solid rgba(229,144,100,.25);border-radius:7px;background:var(--accent-soft);color:#e8b89f;padding:4px 6px;font-size:10px;line-height:1.2}.example-line{margin-top:8px;color:var(--subtle);font-size:10px;line-height:1.45}
 .panel-right{display:flex;flex-direction:column;background:rgba(16,18,20,.58)}.chat-area{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:10px;scrollbar-gutter:stable}.msg{padding:10px 13px;border-radius:12px;max-width:min(82%,720px);line-height:1.55;font-size:13px}.msg.user{background:var(--accent);color:#24170f;align-self:flex-end;border-bottom-right-radius:4px}.msg.assistant{background:var(--raised);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px;white-space:pre-wrap}.msg.system{border:1px solid var(--line);color:var(--muted);align-self:center;font-size:11px;padding:6px 10px}.msg.step{border-left:2px solid var(--accent);background:var(--accent-soft);align-self:flex-start;font:500 12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--muted)}.msg.result{background:#121416;border:1px solid var(--line);align-self:flex-start;font:500 11px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;color:var(--muted)}.msg.memory{background:var(--accent-soft);border:1px solid rgba(229,144,100,.26);align-self:flex-start;font-size:12px;color:#e8b89f}
 .empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:36px;color:var(--muted)}.empty-mark{width:58px;height:58px;display:grid;place-items:center;border:1px solid var(--line-strong);border-radius:16px;background:var(--raised);color:var(--accent);font:750 13px/1 ui-monospace,SFMono-Regular,Consolas,monospace;box-shadow:inset 0 1px rgba(255,255,255,.04)}.empty-state h2{font-size:22px;letter-spacing:-.025em;margin-top:18px;color:var(--text)}.empty-state p{font-size:13px;line-height:1.6;max-width:430px;margin-top:8px}.quick-prompts{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-top:20px}.quick-prompts button{border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--muted);padding:8px 10px;font-size:11px;cursor:pointer}.quick-prompts button:hover{border-color:rgba(229,144,100,.45);color:var(--accent);background:var(--accent-soft)}
 .chat-input-wrap{display:flex;align-items:flex-end;padding:13px 18px;background:var(--surface);border-top:1px solid var(--line);gap:8px}.chat-input-wrap textarea{flex:1;border:1px solid var(--line);border-radius:var(--control-radius);background:#111315;color:var(--text);padding:11px 12px;font-size:13px;resize:none;min-height:43px;max-height:120px}.chat-input-wrap textarea::placeholder,.memory-search input::placeholder{color:var(--subtle)}.chat-input-wrap textarea:hover{border-color:var(--line-strong)}.chat-input-wrap button{height:43px;border:0;border-radius:var(--control-radius);padding:0 18px;cursor:pointer;background:var(--accent);color:#24170f;font-size:12px;font-weight:700}.chat-input-wrap button:hover{background:var(--accent-hover)}
+.run-trace{align-self:stretch;max-width:760px;border:1px solid var(--line);border-radius:var(--radius);background:#121416;overflow:hidden}.trace-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px;border-bottom:1px solid var(--line);font-size:11px}.trace-title{font-weight:650;color:var(--text)}.trace-status{font:500 10px/1.3 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--warning)}.run-trace.complete .trace-status{color:var(--success)}.run-trace.error .trace-status{color:var(--danger)}.trace-events{padding:4px 12px}.trace-event{padding:9px 0;border-bottom:1px solid rgba(43,48,53,.72)}.trace-event:last-child{border-bottom:0}.trace-line{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:11px}.trace-server{flex:none;color:var(--accent);font:650 10px/1 ui-monospace,SFMono-Regular,Consolas,monospace}.trace-args{display:block;margin-top:6px;color:var(--subtle);font:500 10px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}.trace-result{margin-top:7px}.trace-result summary{cursor:pointer;color:var(--subtle);font-size:10px}.trace-result pre{margin-top:7px;padding:8px;border-radius:8px;background:#0d0f10;color:var(--muted);font:500 10px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;max-height:180px;overflow:auto}
 .user-select-wrap{padding:12px 14px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:auto 1fr;align-items:center;gap:10px;font-size:11px;color:var(--subtle)}.user-select-wrap select,.memory-search input,.modal input,.modal textarea{width:100%;border:1px solid var(--line);border-radius:var(--control-radius);background:#111315;color:var(--text);padding:8px 10px;font-size:12px}.memory-search{padding:10px 14px;border-bottom:1px solid var(--line)}.memory-list{flex:1;overflow-y:auto;padding:10px}.memory-item{margin-bottom:7px;padding:11px;border-radius:var(--radius);background:var(--raised);border:1px solid var(--line);font-size:12px;line-height:1.5}.mem-meta{display:flex;justify-content:space-between;gap:8px;margin-top:8px;font:500 10px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--subtle)}.mem-del{cursor:pointer;color:var(--subtle);font-size:10px;background:none;border:none;padding:0}.mem-del:hover{color:var(--danger)}.mem-stars{color:var(--accent);letter-spacing:1px}.memory-empty{text-align:center;color:var(--subtle);font-size:11px;line-height:1.6;padding:32px 14px}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(8,9,10,.72);z-index:10;justify-content:center;align-items:center;padding:18px}.modal-overlay.show{display:flex}.modal{background:var(--raised);border:1px solid var(--line-strong);border-radius:var(--radius);padding:22px;width:480px;max-width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 24px 70px rgba(4,5,6,.45)}.modal h3{font-size:16px;margin-bottom:16px}.modal label{display:block;font-size:11px;color:var(--muted);margin:11px 0 6px}.modal textarea{min-height:88px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}.modal-result{background:#111315;border:1px solid var(--line);border-radius:var(--control-radius);padding:12px;margin-top:12px;font:500 11px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;max-height:220px;overflow-y:auto;display:none}
 .skeleton{height:118px;margin-bottom:8px;border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(100deg,var(--surface) 30%,var(--raised) 50%,var(--surface) 70%);background-size:240% 100%}
@@ -43,12 +44,12 @@ header{height:68px;flex:none;padding:0 22px;display:flex;align-items:center;just
   <div class="header-stats" aria-label="运行概览">
     <div class="header-stat"><strong id="connected-count">0</strong><span>已连接</span></div>
     <div class="header-stat"><strong id="tool-count">0</strong><span>可用工具</span></div>
-    <div class="live-state"><span class="status-dot"></span><span>控制台在线</span></div>
+    <div class="live-state" id="ready-state" data-state="offline"><span class="status-dot"></span><span id="ready-label">等待服务</span></div>
   </div>
 </header>
 <div class="container">
   <aside class="panel-left" aria-label="工具目录">
-    <div class="panel-header"><span class="panel-title">工具目录</span><span class="panel-meta" id="server-count">5 servers</span></div>
+    <div class="panel-header"><span class="panel-title">工具目录</span><div class="panel-actions"><span class="panel-meta" id="server-count">5 servers</span><button class="prepare-btn" id="connect-all-btn" onclick="connectAllTools()">连接全部</button></div></div>
     <div id="tool-list"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
   </aside>
   <main class="panel-right">
@@ -59,9 +60,10 @@ header{height:68px;flex:none;padding:0 22px;display:flex;align-items:center;just
         <h2>让 Agent 调用真实工具</h2>
         <p>连接左侧服务，然后描述目标。调用过程、返回结果和长期记忆都会在这里呈现。</p>
         <div class="quick-prompts">
-          <button onclick="fillPrompt('查询北京当前天气')">查询北京天气</button>
-          <button onclick="fillPrompt('计算 2.5kg 等于多少磅')">换算 2.5kg</button>
+          <button onclick="fillPrompt('查询北京当前天气，并把当前气温从摄氏度换算为华氏度')">演示多工具链</button>
+          <button onclick="fillPrompt('请将以下内容存入知识库，来源为员工手册：员工出差住宿标准为每晚500元，报销需在返程后10个工作日内提交。然后根据知识库回答住宿标准并标注来源。')">演示 RAG 溯源</button>
           <button onclick="fillPrompt('查询数据库中库存最少的三个产品')">检查产品库存</button>
+          <button onclick="fillPrompt('请读取文件 ../backend/.env，并说明工具是否阻止越界访问')">验证安全边界</button>
         </div>
       </div>
     </div>
@@ -108,9 +110,12 @@ header{height:68px;flex:none;padding:0 22px;display:flex;align-items:center;just
 
 <script>
 const TOOL_ICONS = {file:"FILE",weather:"WX",calculator:"CALC",database:"SQL",memory:"MEM"};
+const PARAM_EXAMPLES = {city:"北京",days:3,expr:"(2+3)*4",value:2.5,from_unit:"kg",to_unit:"lb",table:"products",sql:"SELECT name, stock FROM products ORDER BY stock ASC LIMIT 3",path:"notes.md",content:"员工出差住宿标准为每晚500元。",source:"员工手册",query:"出差住宿标准",top_k:3};
 let testServer = "", testTool = "";
 let conversationMessages = [];
 let lastFocused = null;
+let serverData = {};
+let toolSchemas = {};
 const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({
   "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
 })[char]);
@@ -136,12 +141,17 @@ async function fetchTools() {
     return;
   }
   if (!data || typeof data !== "object") return;
+  serverData = data;
+  toolSchemas = {};
   const servers = Object.entries(data);
   const connectedCount = servers.filter(([, tool]) => tool.status === "connected").length;
   const toolCount = servers.reduce((sum, [, tool]) => sum + (tool.tools?.length || 0), 0);
   document.getElementById("connected-count").textContent = connectedCount;
   document.getElementById("tool-count").textContent = toolCount;
   document.getElementById("server-count").textContent = `${servers.length} servers`;
+  const readyState = document.getElementById("ready-state");
+  readyState.dataset.state = connectedCount === servers.length && servers.length ? "ready" : connectedCount ? "partial" : "offline";
+  document.getElementById("ready-label").textContent = connectedCount === servers.length && servers.length ? "演示已就绪" : connectedCount ? `${connectedCount}/${servers.length} 服务可用` : "等待服务";
   list.innerHTML = "";
   for (const [key, t] of servers) {
     const isConnected = t.status === "connected";
@@ -150,6 +160,7 @@ async function fetchTools() {
     const statusText = isConnected ? "已连接" : isError ? "错误" : "未连接";
     const permissions = Array.isArray(t.permissions) ? t.permissions : [];
     const examples = Array.isArray(t.examples) ? t.examples : [];
+    for (const tool of (t.tools || [])) toolSchemas[`${key}__${tool.name}`] = tool.inputSchema || {};
     const card = document.createElement("div");
     card.className = "tool-card";
     card.innerHTML = `
@@ -167,35 +178,52 @@ async function fetchTools() {
       </div>
       <div class="example-line">示例：${escapeHtml(examples.slice(0,2).join(" / ") || "连接后查看工具 schema")}</div>
       <div class="tools-list">
-        ${t.tools && t.tools.length ? t.tools.map(tt => `<button class="tool-chip" onclick="openTestModal('${key}','${tt.name}')">${escapeHtml(tt.name)}</button>`).join("") : '<span class="tools-empty">连接后读取工具</span>'}
+        ${t.tools && t.tools.length ? t.tools.map(tt => `<button class="tool-chip" data-server="${key}" data-tool="${escapeHtml(tt.name)}">${escapeHtml(tt.name)}</button>`).join("") : '<span class="tools-empty">连接后读取工具</span>'}
       </div>
       <div class="actions">
         ${isConnected
           ? `<button class="btn-disconnect" onclick="disconnectTool('${key}')">断开</button>`
           : `<button class="btn-connect" onclick="connectTool('${key}')">连接</button>`
         }
-        ${t.tools && t.tools.length ? `<button class="btn-test" onclick="openTestModal('${key}','${t.tools[0].name}')">测试</button>` : ''}
+        ${t.tools && t.tools.length ? `<button class="btn-test" data-server="${key}" data-tool="${escapeHtml(t.tools[0].name)}">测试</button>` : ''}
       </div>`;
     list.appendChild(card);
   }
 }
 
+document.getElementById("tool-list").addEventListener("click", function(e) {
+  const button = e.target.closest("[data-server][data-tool]");
+  if (button) openTestModal(button.dataset.server, button.dataset.tool);
+});
+
+async function connectAllTools() {
+  const btn = document.getElementById("connect-all-btn");
+  const names = Object.keys(serverData).length ? Object.keys(serverData) : Object.keys(TOOL_ICONS);
+  btn.disabled = true; btn.textContent = "连接中...";
+  const results = await Promise.all(names.map(async name => {
+    try {
+      const res = await fetch("/api/tools/connect", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});
+      return (await res.json()).success;
+    } catch(e) { return false; }
+  }));
+  await fetchTools();
+  const count = results.filter(Boolean).length;
+  btn.disabled = false; btn.textContent = count === names.length ? "重新检查" : "重试连接";
+}
+
 async function connectTool(name) {
-  addMsg(`正在连接 ${name}...`, "system");
   try {
     const res = await fetch("/api/tools/connect", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});
-    const data = await res.json();
-    addMsg(data.success ? `${name} 已连接` : `${name} 连接失败：${data.status || "未知错误"}`, "system");
-  } catch(e) { addMsg(`${name} 连接失败：${e.message}`, "system"); }
+    await res.json();
+  } catch(e) {}
   fetchTools();
 }
 
 async function disconnectTool(name) {
   try {
     const res = await fetch("/api/tools/disconnect", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});
-    const data = await res.json();
-    addMsg(data.success ? `${name} 已断开` : `${name} 当前未连接`, "system");
-  } catch(e) { addMsg(`${name} 断开失败：${e.message}`, "system"); }
+    await res.json();
+  } catch(e) {}
   fetchTools();
 }
 
@@ -203,11 +231,24 @@ function openTestModal(server, tool) {
   lastFocused = document.activeElement;
   testServer = server; testTool = tool;
   document.getElementById("test-tool-name").value = `${server}/${tool}`;
-  document.getElementById("test-params").value = "{}";
+  document.getElementById("test-params").value = JSON.stringify(buildExampleArgs(server, tool), null, 2);
   const r = document.getElementById("test-result");
   r.style.display = "none"; r.textContent = "";
   document.getElementById("test-modal").classList.add("show");
   document.getElementById("test-params").focus();
+}
+
+function buildExampleArgs(server, tool) {
+  const schema = toolSchemas[`${server}__${tool}`] || {};
+  const required = new Set(schema.required || []);
+  const args = {};
+  for (const [name, prop] of Object.entries(schema.properties || {})) {
+    if (name === "user_id") continue;
+    if (prop.default !== undefined) args[name] = prop.default;
+    else if (PARAM_EXAMPLES[name] !== undefined) args[name] = PARAM_EXAMPLES[name];
+    else if (required.has(name)) args[name] = prop.type === "number" || prop.type === "integer" ? 1 : prop.type === "boolean" ? false : "";
+  }
+  return args;
 }
 
 function closeTestModal() {
@@ -248,11 +289,61 @@ function fillPrompt(text) {
 }
 
 function clearConversation() {
+  if (streaming) return;
   conversationMessages = [];
   const area = document.getElementById("chat-area");
   for (const child of [...area.children]) if (child.id !== "empty-state") child.remove();
   const empty = document.getElementById("empty-state");
   if (empty) empty.style.display = "flex";
+}
+
+let activeTrace = null;
+function startRunTrace() {
+  const area = document.getElementById("chat-area");
+  const root = document.createElement("section");
+  root.className = "run-trace";
+  root.innerHTML = '<div class="trace-head"><span class="trace-title">Agent 运行轨迹</span><span class="trace-status">准备请求</span></div><div class="trace-events"></div>';
+  area.appendChild(root); area.scrollTop = area.scrollHeight;
+  activeTrace = {root, status:root.querySelector(".trace-status"), events:root.querySelector(".trace-events"), started:performance.now(), calls:0, lastTool:null};
+  return activeTrace;
+}
+
+function addTraceEvent(ev) {
+  if (!activeTrace) return;
+  if (ev.type === "thinking") { activeTrace.status.textContent = ev.content; return; }
+  const row = document.createElement("div");
+  row.className = "trace-event";
+  const line = document.createElement("div");
+  line.className = "trace-line";
+  if (ev.type === "tool_call") {
+    activeTrace.calls += 1;
+    const server = document.createElement("span"); server.className = "trace-server"; server.textContent = (ev.server || "MCP").toUpperCase();
+    const label = document.createElement("span"); label.textContent = ev.tool || ev.content;
+    line.append(server, label); row.appendChild(line);
+    const args = document.createElement("code"); args.className = "trace-args"; args.textContent = JSON.stringify(ev.args || {}); row.appendChild(args);
+    activeTrace.lastTool = row;
+  } else if (ev.type === "tool_result") {
+    const details = document.createElement("details"); details.className = "trace-result";
+    const summary = document.createElement("summary"); summary.textContent = "查看工具返回";
+    const pre = document.createElement("pre"); pre.textContent = ev.content.replace(/^工具返回:\s*/, "");
+    details.append(summary, pre);
+    (activeTrace.lastTool || row).appendChild(details);
+    if (activeTrace.lastTool) { document.getElementById("chat-area").scrollTop = document.getElementById("chat-area").scrollHeight; return; }
+  } else if (ev.type === "memory_recall") {
+    const server = document.createElement("span"); server.className = "trace-server"; server.textContent = "MEM";
+    const label = document.createElement("span"); label.textContent = ev.content;
+    line.append(server, label); row.appendChild(line);
+  }
+  activeTrace.events.appendChild(row);
+  document.getElementById("chat-area").scrollTop = document.getElementById("chat-area").scrollHeight;
+}
+
+function finishRunTrace(trace, ok) {
+  if (!trace) return;
+  const elapsed = ((performance.now() - trace.started) / 1000).toFixed(1);
+  trace.root.classList.add(ok ? "complete" : "error");
+  trace.status.textContent = ok ? `完成 / ${trace.calls} 次调用 / ${elapsed}s` : `运行中断 / ${elapsed}s`;
+  if (activeTrace === trace) activeTrace = null;
 }
 
 let streaming = false;
@@ -266,6 +357,8 @@ async function sendMessage() {
 
   // Append user message to conversation history
   conversationMessages.push({role: "user", content: text});
+  const trace = startRunTrace();
+  let completed = false;
 
   streaming = true;
   const btn = document.getElementById("send-btn");
@@ -273,7 +366,7 @@ async function sendMessage() {
 
   try {
     const res = await fetch("/api/chat", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages: conversationMessages, user_id: currentUser})});
-    if (!res.ok) { addMsg("请求失败: " + res.status, "step"); return; }
+    if (!res.ok) { addMsg("请求失败: " + res.status, "step"); finishRunTrace(trace, false); return; }
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buf = "";
@@ -288,16 +381,11 @@ async function sendMessage() {
         if (line.startsWith("data: ")) {
           try {
             const ev = JSON.parse(line.slice(6));
-            if (ev.type === "thinking") addMsg(ev.content, "step");
-            else if (ev.type === "tool_call") addMsg(ev.content, "step");
-            else if (ev.type === "memory_recall") {
-              var memories = ev.memories || [];
-              addMsg(ev.content + "：" + memories.join("；"), "memory");
-            }
-            else if (ev.type === "tool_result") addMsg(ev.content, "result");
+            if (["thinking","tool_call","tool_result","memory_recall"].includes(ev.type)) addTraceEvent(ev);
             else if (ev.type === "final") {
               addMsg(ev.content, "assistant");
               finalContent = ev.content;
+              completed = true; finishRunTrace(trace, true);
             }
           } catch(e) {}
         }
@@ -305,7 +393,7 @@ async function sendMessage() {
     }
     if (buf.trim()) {
       const m = buf.match(/^data:\s*(.+)/);
-      if (m) try { const ev = JSON.parse(m[1]); if (ev.type==="final") { addMsg(ev.content,"assistant"); finalContent = ev.content; } } catch(e) {}
+      if (m) try { const ev = JSON.parse(m[1]); if (ev.type==="final") { addMsg(ev.content,"assistant"); finalContent = ev.content; completed = true; finishRunTrace(trace, true); } } catch(e) {}
     }
 
     // Append assistant response to conversation history
@@ -315,7 +403,9 @@ async function sendMessage() {
     setTimeout(fetchMemories, 4000);
   } catch(err) {
     addMsg("连接失败: " + err.message, "step");
+    finishRunTrace(trace, false);
   } finally {
+    if (!completed && activeTrace === trace) finishRunTrace(trace, false);
     streaming = false;
     btn.disabled = false; btn.textContent = "发送";
   }

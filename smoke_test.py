@@ -114,7 +114,11 @@ class SmokeTests(unittest.TestCase):
         for marker in (
             'id="connected-count"',
             'id="tool-count"',
+            'id="connect-all-btn"',
             'class="quick-prompts"',
+            'root.className = "run-trace"',
+            "function buildExampleArgs",
+            "function finishRunTrace",
             "prefers-reduced-motion",
             "escapeHtml(m.content)",
             "encodeURIComponent(currentUser)",

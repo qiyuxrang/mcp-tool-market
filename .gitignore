@@ -9,3 +9,4 @@ chroma_data/
 venv/
 *.egg-info/
 dist/
+.learnings/
