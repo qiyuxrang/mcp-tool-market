@@ -3,7 +3,6 @@ __pycache__/
 .env
 *.db
 !servers/db-server/sample.db
-!servers/memory-server/chroma_data/
 chroma_data/
 .venv/
 venv/

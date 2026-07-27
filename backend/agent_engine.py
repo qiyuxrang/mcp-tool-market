@@ -214,67 +214,67 @@ class AgentEngine:
             message = choice.message
 
             if message.tool_calls:
-                    # OpenAI 要求单条 assistant 消息包含所有 tool_calls
-                    assistant_tool_calls = []
-                    for tc in message.tool_calls:
-                        assistant_tool_calls.append({
-                            "id": tc.id,
-                            "type": "function",
-                            "function": {
-                                "name": tc.function.name,
-                                "arguments": tc.function.arguments,
-                            },
-                        })
-
-                    conversation.append({
-                        "role": "assistant",
-                        "content": message.content or None,
-                        "tool_calls": assistant_tool_calls,
+                # OpenAI 要求单条 assistant 消息包含所有 tool_calls
+                assistant_tool_calls = []
+                for tc in message.tool_calls:
+                    assistant_tool_calls.append({
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments,
+                        },
                     })
 
-                    for tc in message.tool_calls:
-                        try:
-                            server_name, tool_name, arguments = _parse_tool_call(tc)
-                            arguments = self.bind_user_scope(
-                                server_name, tool_name, arguments, user_id
-                            )
-                        except (ValueError, json.JSONDecodeError) as e:
-                            result = f"工具调用参数无效: {e}"
-                            yield {"type": "tool_result", "content": result}
-                            conversation.append({
-                                "role": "tool",
-                                "tool_call_id": tc.id,
-                                "content": result,
-                            })
-                            continue
+                conversation.append({
+                    "role": "assistant",
+                    "content": message.content or None,
+                    "tool_calls": assistant_tool_calls,
+                })
 
-                        yield {
-                            "type": "tool_call",
-                            "content": f"调用工具: {tool_name}",
-                            "server": server_name,
-                            "tool": tool_name,
-                            "args": arguments,
-                        }
-
-                        try:
-                            result = await self.mcp_client.call_tool(
-                                server_name, tool_name, arguments
-                            )
-                        except Exception as e:
-                            result = f"工具调用失败: {e}"
-                        result = _limit_tool_result(result)
-
-                        yield {
-                            "type": "tool_result",
-                            "content": f"工具返回:\n\n{result}",
-                        }
-
+                for tc in message.tool_calls:
+                    try:
+                        server_name, tool_name, arguments = _parse_tool_call(tc)
+                        arguments = self.bind_user_scope(
+                            server_name, tool_name, arguments, user_id
+                        )
+                    except (ValueError, json.JSONDecodeError) as e:
+                        result = f"工具调用参数无效: {e}"
+                        yield {"type": "tool_result", "content": result}
                         conversation.append({
                             "role": "tool",
                             "tool_call_id": tc.id,
                             "content": result,
                         })
-                    # Continue to next round
+                        continue
+
+                    yield {
+                        "type": "tool_call",
+                        "content": f"调用工具: {tool_name}",
+                        "server": server_name,
+                        "tool": tool_name,
+                        "args": arguments,
+                    }
+
+                    try:
+                        result = await self.mcp_client.call_tool(
+                            server_name, tool_name, arguments
+                        )
+                    except Exception as e:
+                        result = f"工具调用失败: {e}"
+                    result = _limit_tool_result(result)
+
+                    yield {
+                        "type": "tool_result",
+                        "content": f"工具返回:\n\n{result}",
+                    }
+
+                    conversation.append({
+                        "role": "tool",
+                        "tool_call_id": tc.id,
+                        "content": result,
+                    })
+                # Continue to next round
             else:
                 content = message.content or ""
                 # 对话后：异步抽取记忆（不阻塞回复）

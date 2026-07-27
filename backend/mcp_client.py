@@ -1,8 +1,13 @@
+import asyncio
 import os
 from contextlib import asynccontextmanager
 
 from mcp import ClientSession
 from mcp.client.sse import sse_client
+
+# SSE 端点就绪可能晚于 TCP 端口 listen；握手失败时短退避重试，避免首连偶发失败
+CONNECT_MAX_ATTEMPTS = 2
+CONNECT_RETRY_DELAY = 0.3
 
 # 服务器地址支持环境变量覆盖：Docker Compose 中需指向服务名而非 localhost
 SERVER_REGISTRY = {
@@ -66,6 +71,8 @@ class MCPClientManager:
     def __init__(self):
         self.status: dict[str, str] = {}
         self.tools_cache: dict[str, list] = {}
+        # 默认用 asyncio.sleep；测试可注入零耗时 sleep 避免真等
+        self._sleep = asyncio.sleep
         for name in SERVER_REGISTRY:
             self.status[name] = "disconnected"
             self.tools_cache[name] = []
@@ -79,20 +86,33 @@ class MCPClientManager:
                 await session.initialize()
                 yield session
 
+    async def _handshake(self, name: str):
+        """打开一次会话并拉取工具列表。返回 tools_result，失败抛异常。"""
+        async with self._session(name) as session:
+            return await session.list_tools()
+
     async def connect(self, name: str) -> bool:
-        """Connect to an MCP Server by name using SSE transport."""
+        """Connect to an MCP Server by name using SSE transport.
+
+        SSE 端点在 TCP listen 后才真正可用，握手偶发失败时短退避重试。
+        """
         if name not in SERVER_REGISTRY:
             return False
-        try:
-            async with self._session(name) as session:
-                tools_result = await session.list_tools()
-            self.tools_cache[name] = tools_result.tools
-            self.status[name] = "connected"
-            return True
-        except Exception as e:
-            self.status[name] = f"error: {e}"
-            self.tools_cache[name] = []
-            return False
+        last_error: Exception | None = None
+        for attempt in range(CONNECT_MAX_ATTEMPTS):
+            try:
+                tools_result = await self._handshake(name)
+                self.tools_cache[name] = tools_result.tools
+                self.status[name] = "connected"
+                return True
+            except Exception as e:
+                last_error = e
+                # 还有下一次机会才退避；最后一次直接退出
+                if attempt < CONNECT_MAX_ATTEMPTS - 1:
+                    await self._sleep(CONNECT_RETRY_DELAY)
+        self.status[name] = f"error: {last_error}"
+        self.tools_cache[name] = []
+        return False
 
     async def disconnect(self, name: str) -> bool:
         """Mark a server disconnected and clear its cached tools."""

@@ -1,0 +1,15 @@
+# 密钥与本地配置不得进入镜像层
+.env
+.env.*
+
+# Python 缓存与虚拟环境
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+.venv/
+venv/
+
+# 本地 IDE / 杂项
+.DS_Store

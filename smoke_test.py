@@ -1,4 +1,5 @@
 """Fast offline regression checks for the project's security boundaries."""
+import asyncio
 import importlib.util
 import os
 import socket
@@ -208,6 +209,40 @@ class MCPClientTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(await manager.connect("calculator"))
         self.assertTrue(manager.status["calculator"].startswith("error:"))
         self.assertEqual(manager.tools_cache["calculator"], [])
+
+    async def test_connect_retries_then_succeeds_on_transient_failure(self):
+        # 模拟 SSE 端点晚于 TCP listen：首次握手失败，重试即成功
+        manager = mcp_client.MCPClientManager()
+        manager._sleep = lambda _: asyncio.sleep(0)  # 零耗时退避，避免真等
+
+        attempts = {"n": 0}
+
+        class TransientSession:
+            def __init__(self):
+                self._entered = False
+
+            async def __aenter__(self):
+                self._entered = True
+                attempts["n"] += 1
+                if attempts["n"] == 1:
+                    raise OSError("sse not ready")
+                return self
+
+            async def __aexit__(self, *args):
+                return False
+
+            async def list_tools(self):
+                tools = SimpleNamespace(
+                    tools=[SimpleNamespace(name="calc", description="d",
+                                          inputSchema={})]
+                )
+                return tools
+
+        manager._session = lambda name: TransientSession()
+        self.assertTrue(await manager.connect("calculator"))
+        self.assertEqual(manager.status["calculator"], "connected")
+        self.assertEqual(attempts["n"], 2)
+        self.assertEqual(manager.tools_cache["calculator"][0].name, "calc")
 
 
 class MemorySecurityTests(unittest.IsolatedAsyncioTestCase):
