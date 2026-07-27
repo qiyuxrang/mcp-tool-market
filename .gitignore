@@ -9,3 +9,6 @@ venv/
 *.egg-info/
 dist/
 .learnings/
+# file-server 运行时播种的沙箱示例文件
+workspace/
+servers/file-server/workspace/

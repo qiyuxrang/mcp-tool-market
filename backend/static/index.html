@@ -20,7 +20,17 @@ header{height:68px;flex:none;padding:0 22px;display:flex;align-items:center;just
 #tool-list{padding:10px;overflow-y:auto}.tool-card{padding:13px;margin-bottom:8px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);transition:border-color .2s ease,background .2s ease,transform .2s ease}.tool-card:hover{border-color:var(--line-strong);background:var(--raised);transform:translateY(-1px)}.card-header{display:flex;align-items:center;justify-content:space-between;gap:10px}.card-identity{display:flex;align-items:center;min-width:0}.card-icon{width:34px;height:34px;flex:none;margin-right:10px;border-radius:9px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font:700 10px/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.02em}.card-name{font-size:13px;font-weight:650}.status-text{font-size:10px;color:var(--muted);display:inline-flex;align-items:center;gap:6px}.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block}.dot-connected{background:var(--success)}.dot-disconnected{background:var(--subtle)}.dot-error{background:var(--danger)}
 .tools-list{margin:11px 0;display:flex;flex-wrap:wrap;gap:5px}.tool-chip{border:1px solid var(--line);background:transparent;color:var(--muted);padding:4px 7px;border-radius:7px;font:500 10px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;cursor:pointer}.tool-chip:hover{border-color:rgba(229,144,100,.45);color:var(--accent);background:var(--accent-soft)}.tools-empty{color:var(--subtle);font-size:11px}.actions{display:flex;gap:6px}.actions button,.modal-actions button{border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:var(--raised);color:var(--muted);font-size:11px;font-weight:600;cursor:pointer}.actions button:hover,.modal-actions button:hover{border-color:var(--line-strong);color:var(--text)}.actions .btn-connect,.modal-actions .btn-run{border-color:transparent;background:var(--accent);color:#24170f}.actions .btn-connect:hover,.modal-actions .btn-run:hover{background:var(--accent-hover);color:#24170f}.actions .btn-disconnect:hover{border-color:rgba(217,122,122,.5);color:var(--danger)}
 .market-summary{margin-top:9px;color:var(--muted);font-size:11px;line-height:1.5}.market-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px}.market-pill{border:1px solid var(--line);border-radius:8px;padding:6px 7px;background:#111315}.market-pill span{display:block;color:var(--subtle);font-size:9px;margin-bottom:3px}.market-pill strong{display:block;color:var(--text);font-size:11px;font-weight:650}.permission-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}.permission-tag{border:1px solid rgba(229,144,100,.25);border-radius:7px;background:var(--accent-soft);color:#e8b89f;padding:4px 6px;font-size:10px;line-height:1.2}.example-line{margin-top:8px;color:var(--subtle);font-size:10px;line-height:1.45}
-.panel-right{display:flex;flex-direction:column;background:rgba(16,18,20,.58)}.chat-area{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:10px;scrollbar-gutter:stable}.msg{padding:10px 13px;border-radius:12px;max-width:min(82%,720px);line-height:1.55;font-size:13px}.msg.user{background:var(--accent);color:#24170f;align-self:flex-end;border-bottom-right-radius:4px}.msg.assistant{background:var(--raised);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px;white-space:pre-wrap}.msg.system{border:1px solid var(--line);color:var(--muted);align-self:center;font-size:11px;padding:6px 10px}.msg.step{border-left:2px solid var(--accent);background:var(--accent-soft);align-self:flex-start;font:500 12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--muted)}.msg.result{background:#121416;border:1px solid var(--line);align-self:flex-start;font:500 11px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;color:var(--muted)}.msg.memory{background:var(--accent-soft);border:1px solid rgba(229,144,100,.26);align-self:flex-start;font-size:12px;color:#e8b89f}
+.panel-right{display:flex;flex-direction:column;background:rgba(16,18,20,.58)}.chat-area{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:10px;scrollbar-gutter:stable}.msg{padding:10px 13px;border-radius:12px;max-width:min(82%,720px);line-height:1.55;font-size:13px}.msg.user{background:var(--accent);color:#24170f;align-self:flex-end;border-bottom-right-radius:4px}.msg.assistant{background:var(--raised);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px;word-wrap:break-word;overflow-wrap:anywhere}.msg.system{border:1px solid var(--line);color:var(--muted);align-self:center;font-size:11px;padding:6px 10px}.msg.step{border-left:2px solid var(--accent);background:var(--accent-soft);align-self:flex-start;font:500 12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--muted)}.msg.result{background:#121416;border:1px solid var(--line);align-self:flex-start;font:500 11px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;color:var(--muted)}.msg.memory{background:var(--accent-soft);border:1px solid rgba(229,144,100,.26);align-self:flex-start;font-size:12px;color:#e8b89f}
+.msg.assistant p{margin:0 0 8px}.msg.assistant p:last-child{margin-bottom:0}.msg.assistant h1,.msg.assistant h2,.msg.assistant h3,.msg.assistant h4{margin:14px 0 6px;line-height:1.3}.msg.assistant h1{font-size:16px}.msg.assistant h2{font-size:15px}.msg.assistant h3{font-size:14px}.msg.assistant h4{font-size:13px}
+.msg.assistant ul,.msg.assistant ol{margin:6px 0;padding-left:22px}.msg.assistant li{margin:3px 0}
+.msg.assistant blockquote{margin:6px 0;padding:4px 10px;border-left:3px solid var(--accent);background:var(--accent-soft);color:var(--muted)}
+.msg.assistant code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#111315;padding:1px 5px;border-radius:5px;font-size:12px;color:#e8b89f}
+.msg.assistant pre{margin:8px 0;padding:10px;border-radius:8px;background:#0d0f10;border:1px solid var(--line);overflow:auto}
+.msg.assistant pre code{background:transparent;padding:0;color:var(--muted);font-size:11px;line-height:1.5}
+.msg.assistant table{margin:8px 0;border-collapse:collapse;width:100%;font-size:12px}
+.msg.assistant th,.msg.assistant td{border:1px solid var(--line-strong);padding:5px 9px;text-align:left}
+.msg.assistant th{background:var(--raised);color:var(--text);font-weight:650}
+.msg.assistant a{color:var(--accent);text-decoration:underline}
 .empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:36px;color:var(--muted)}.empty-mark{width:58px;height:58px;display:grid;place-items:center;border:1px solid var(--line-strong);border-radius:16px;background:var(--raised);color:var(--accent);font:750 13px/1 ui-monospace,SFMono-Regular,Consolas,monospace;box-shadow:inset 0 1px rgba(255,255,255,.04)}.empty-state h2{font-size:22px;letter-spacing:-.025em;margin-top:18px;color:var(--text)}.empty-state p{font-size:13px;line-height:1.6;max-width:430px;margin-top:8px}.quick-prompts{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-top:20px}.quick-prompts button{border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--muted);padding:8px 10px;font-size:11px;cursor:pointer}.quick-prompts button:hover{border-color:rgba(229,144,100,.45);color:var(--accent);background:var(--accent-soft)}
 .chat-input-wrap{display:flex;align-items:flex-end;padding:13px 18px;background:var(--surface);border-top:1px solid var(--line);gap:8px}.chat-input-wrap textarea{flex:1;border:1px solid var(--line);border-radius:var(--control-radius);background:#111315;color:var(--text);padding:11px 12px;font-size:13px;resize:none;min-height:43px;max-height:120px}.chat-input-wrap textarea::placeholder,.memory-search input::placeholder{color:var(--subtle)}.chat-input-wrap textarea:hover{border-color:var(--line-strong)}.chat-input-wrap button{height:43px;border:0;border-radius:var(--control-radius);padding:0 18px;cursor:pointer;background:var(--accent);color:#24170f;font-size:12px;font-weight:700}.chat-input-wrap button:hover{background:var(--accent-hover)}
 .run-trace{align-self:stretch;max-width:760px;border:1px solid var(--line);border-radius:var(--radius);background:#121416;overflow:hidden}.trace-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px;border-bottom:1px solid var(--line);font-size:11px}.trace-title{font-weight:650;color:var(--text)}.trace-status{font:500 10px/1.3 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--warning)}.run-trace.complete .trace-status{color:var(--success)}.run-trace.error .trace-status{color:var(--danger)}.trace-events{padding:4px 12px}.trace-event{padding:9px 0;border-bottom:1px solid rgba(43,48,53,.72)}.trace-event:last-child{border-bottom:0}.trace-line{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:11px}.trace-server{flex:none;color:var(--accent);font:650 10px/1 ui-monospace,SFMono-Regular,Consolas,monospace}.trace-args{display:block;margin-top:6px;color:var(--subtle);font:500 10px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}.trace-result{margin-top:7px}.trace-result summary{cursor:pointer;color:var(--subtle);font-size:10px}.trace-result pre{margin-top:7px;padding:8px;border-radius:8px;background:#0d0f10;color:var(--muted);font:500 10px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;max-height:180px;overflow:auto}
@@ -269,13 +279,93 @@ async function runTest() {
   } catch(e) { r.textContent = "请求失败: " + e.message; }
 }
 
+// 最小 markdown 渲染器：先转义 HTML 防 XSS，再依次解析代码块、表格、列表、引用、加粗/代码/链接。
+// 不引外部库，覆盖演示场景常见的结构化输出。
+function renderMarkdown(text) {
+  let src = String(text ?? "");
+  const blocks = [];
+  // 1) 抽出代码块占位，避免内部内容被后续规则误伤
+  src = src.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    const i = blocks.length;
+    blocks.push('<pre><code>' + escapeHtml(code.replace(/\n$/, '')) + '</code></pre>');
+    return ' BLOCK' + i + ' ';
+  });
+  // 2) 行级解析
+  const lines = src.split('\n');
+  const out = [];
+  let tableRows = [];
+  function flushTable() {
+    if (!tableRows.length) return;
+    const rows = tableRows.map((row, ri) => {
+      const cells = row.split('|').map(c => c.trim()).filter((_, i, a) => !(i === 0 && _ === '') && !(i === a.length - 1 && _ === ''));
+      // 第二行是分隔符 | --- | --- |，跳过
+      if (ri === 1 && cells.every(c => /^:?-+:?$/.test(c))) return '';
+      const tag = ri === 0 ? 'th' : 'td';
+      return '<tr>' + cells.map(c => '<' + tag + '>' + c + '</' + tag + '>').join('') + '</tr>';
+    }).filter(Boolean);
+    if (rows.length) out.push('<table>' + rows.join('') + '</table>');
+    tableRows = [];
+  }
+  let listType = null;
+  function flushList() {
+    if (listType) { out.push('</' + listType + '>'); listType = null; }
+  }
+  for (const raw of lines) {
+    const line = raw;
+    // 表格行：以 | 开头
+    if (/^\s*\|/.test(line) && line.includes('|')) {
+      flushList();
+      tableRows.push(line.trim());
+      continue;
+    } else if (tableRows.length) flushTable();
+    // 列表
+    const ul = line.match(/^\s*[-*]\s+(.*)$/);
+    const ol = line.match(/^\s*\d+\.\s+(.*)$/);
+    if (ul) {
+      if (listType !== 'ul') { flushList(); out.push('<ul>'); listType = 'ul'; }
+      out.push('<li>' + ul[1] + '</li>');
+      continue;
+    }
+    if (ol) {
+      if (listType !== 'ol') { flushList(); out.push('<ol>'); listType = 'ol'; }
+      out.push('<li>' + ol[1] + '</li>');
+      continue;
+    }
+    flushList();
+    // 引用
+    const bq = line.match(/^\s*>\s?(.*)$/);
+    if (bq) { out.push('<blockquote>' + bq[1] + '</blockquote>'); continue; }
+    // 标题
+    const h = line.match(/^(#{1,6})\s+(.*)$/);
+    if (h) { out.push('<h' + h[1].length + '>' + h[2] + '</h' + h[1].length + '>'); continue; }
+    // 空行
+    if (!line.trim()) { out.push(''); continue; }
+    out.push('<p>' + line + '</p>');
+  }
+  flushList();
+  if (tableRows.length) flushTable();
+  let html = out.join('\n');
+  // 3) 还原代码块
+  html = html.replace(/ BLOCK(\d+) /g, (_, i) => blocks[+i]);
+  // 4) 行内：加粗、代码、链接（转义后再匹配，安全）
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  return html;
+}
+
 function addMsg(content, type) {
   const area = document.getElementById("chat-area");
   const empty = document.getElementById("empty-state");
   if (empty) empty.style.display = "none";
   const div = document.createElement("div");
   div.className = "msg " + type;
-  div.textContent = content;
+  // assistant 消息走 markdown 渲染；其余类型保持纯文本（textContent 防 XSS）
+  if (type === "assistant") {
+    div.innerHTML = renderMarkdown(content);
+  } else {
+    div.textContent = content;
+  }
   area.appendChild(div);
   area.scrollTop = area.scrollHeight;
   return div;

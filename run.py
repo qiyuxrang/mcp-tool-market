@@ -23,17 +23,19 @@ processes = []
 
 
 def load_env(path: Path) -> None:
-    """Load the simple KEY=VALUE format used by backend/.env."""
+    """Load the simple KEY=VALUE format used by backend/.env.
+
+    .env 优先于 shell 环境变量：项目本地配置应覆盖外部默认值，
+    避免 shell 里残留的 OPENAI_BASE_URL 等把项目指向错误端点。
+    """
     if not path.is_file():
         return
-    # ponytail: this covers the checked-in template; use python-dotenv only if
-    # multiline values or variable interpolation become necessary.
     for raw_line in path.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, value = line.split("=", 1)
-        os.environ.setdefault(key.strip(), value.strip().strip("\"'"))
+        os.environ[key.strip()] = value.strip().strip("\"'")
 
 
 def port_is_open(port: int) -> bool:

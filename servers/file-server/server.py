@@ -22,6 +22,19 @@ def safe_path(path: str) -> str:
 # Create sandbox directory on startup
 os.makedirs(SANDBOX, exist_ok=True)
 
+# workspace 为空时播种示例文件，演示「即点即用」的读写闭环
+_SEED_FILES = {
+    "notes.md": "# 项目笔记\n\n这是 file-server 沙箱内的示例笔记。\n可调用 write_file 覆盖，或读取其它已播种文件。",
+    "todo.md": "# TODO\n\n- [x] 验证 read_file\n- [ ] 验证 write_file\n- [ ] 验证目录穿越被阻止",
+    "analysis/result.txt": "Q3 销售摘要：笔记本销量最高，库存压力最小。",
+}
+if not any(os.scandir(SANDBOX)):
+    for rel, body in _SEED_FILES.items():
+        full = os.path.join(SANDBOX, rel)
+        os.makedirs(os.path.dirname(full), exist_ok=True)
+        with open(full, "w", encoding="utf-8") as f:
+            f.write(body)
+
 mcp = FastMCP("file-server")
 
 

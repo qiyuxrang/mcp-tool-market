@@ -135,7 +135,8 @@ class SmokeTests(unittest.TestCase):
         ):
             self.assertIn(marker, html)
 
-    def test_dev_launcher_loads_env_without_overwriting_shell(self):
+    def test_dev_launcher_loads_env_overriding_shell(self):
+        # .env 优先于 shell：避免 shell 残留的 OPENAI_BASE_URL 等把项目指向错误端点
         with tempfile.TemporaryDirectory() as directory:
             env_file = Path(directory) / ".env"
             env_file.write_text("SMOKE_NEW=value\nSMOKE_KEEP=file\n", encoding="utf-8")
@@ -143,7 +144,7 @@ class SmokeTests(unittest.TestCase):
             try:
                 launcher.load_env(env_file)
                 self.assertEqual(os.environ["SMOKE_NEW"], "value")
-                self.assertEqual(os.environ["SMOKE_KEEP"], "shell")
+                self.assertEqual(os.environ["SMOKE_KEEP"], "file")
             finally:
                 os.environ.pop("SMOKE_NEW", None)
                 os.environ.pop("SMOKE_KEEP", None)
