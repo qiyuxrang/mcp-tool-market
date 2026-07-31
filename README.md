@@ -1,104 +1,140 @@
-# MCP 工具市场
+# MCP Tool Market
 
-基于 Model Context Protocol 的标准化 AI 工具集合平台。包含 5 个 MCP Server、Agent 引擎和 Web 管理界面，并展示每个工具的类别、风险等级、权限边界和调用示例。
+一个面向企业 Agent 应用的工具治理与调用工作台。项目把文件、天气、计算、数据库、知识库等能力封装为独立 MCP Server，由后端 Agent 统一发现、编排和调用，并在 React 控制台中展示连接状态、权限边界、流式回答和完整工具轨迹。
 
-## 功能
+## 商业价值
 
-| 工具 | 说明 |
-|------|------|
-| 📁 文件系统工具 | AI 读写文件、目录管理（安全沙箱隔离） |
-| 🌤️ 天气查询工具 | 实时天气与天气预报（wttr.in） |
-| 🧮 计算器工具 | 数学计算与单位换算（AST 安全求值） |
-| 🗄️ 数据库查询工具 | 基于 SQLite 的结构化数据查询（SELECT-only） |
-| 🧠 记忆与知识库 | Agent 长期记忆；文档切块、语义检索与来源引用（ChromaDB 持久化） |
+企业落地 Agent 时，真正的难点通常不是“让模型回答问题”，而是让模型安全、可观测地调用业务工具：
 
-Web 管理界面会把工具按市场卡片展示：连接状态、工具 schema、权限说明、安全边界和示例问题都在同一张卡片里，便于解释 Agent 工具治理。
+- **工具标准化**：把不同系统能力统一成 MCP 工具，降低 Agent 接入成本。
+- **权限可解释**：每个工具展示风险等级、权限边界和调用范围，便于治理与审计。
+- **调用可追踪**：前端实时展示 thinking、tool_call、tool_result、final，方便排查模型为什么这么做。
+- **安全边界**：文件沙箱、数据库 SELECT-only、表达式白名单、用户记忆逻辑分区，展示基本防护意识。
+- **评测闭环**：内置天气计算、库存查询、RAG 溯源和安全边界评测，便于演示稳定能力。
 
-> 安全边界：当前是本地演示系统，没有登录认证。`user_id` 只用于逻辑分区，不能当作生产级租户隔离；Docker 默认只把 Web 后端绑定到本机回环地址，MCP Server 仅在 Compose 内部网络可见。
+这个项目适合包装为：**企业内部 Agent 工具市场 / MCP 工具治理控制台 / AI 应用开发平台原型**。
 
-## RAG 场景演示
+## 推荐截图
 
-连接“记忆系统”后，可以直接对 Agent 说：
+面试和简历材料建议准备 4 张图：
 
-1. `请将以下内容存入知识库，来源为员工手册：员工出差住宿标准为每晚500元，报销需在返程后10个工作日内提交。`
-2. `根据知识库回答：出差住宿每晚最多报销多少？请标注来源。`
+| 文件名建议 | 截图内容 | 用途 |
+|---|---|---|
+| `01-dashboard.png` | 三栏 React 控制台，左侧 5 个工具全部 connected，中间 Agent 工作台，右侧评测任务 | 展示“工具市场 + 控制台”整体形态 |
+| `02-weather-trace.png` | 运行“天气 + 计算”后，中间回答区和运行轨迹同时可见 | 展示 Agent 自动调用多个 MCP 工具 |
+| `03-rag-source.png` | RAG 溯源任务通过，回答中包含员工手册来源 | 展示知识库检索和来源约束 |
+| `04-security-boundary.png` | 安全边界任务通过，读取 `../backend/.env` 被拒绝 | 展示权限边界和安全意识 |
 
-Agent 会先调用 `index_knowledge` 写入文档，再调用 `search_knowledge` 检索片段，并基于来源回答。
-知识库是演示环境内共享语料，不按 `user_id` 分区；低于 `KNOWLEDGE_MIN_SCORE` 的片段不会返回，该阈值需要随 embedding 模型和真实评测校准。
+截图重点不是 UI 多漂亮，而是让面试官一眼看到：**工具连接状态、工具调用轨迹、最终回答、评测结果**。
 
-运行知识库回归评测：
+## 核心能力
 
-```bash
-cd servers/memory-server
-python evaluate_knowledge.py       # 离线管线回归，无需 API；不代表真实语义质量
-python evaluate_knowledge.py live  # 使用当前环境变量配置的 Embedding API
-```
+| 模块 | 说明 | 风险控制 |
+|---|---|---|
+| 文件系统 | 在沙箱目录中读写文件、列目录 | 阻止目录穿越、限制文件大小 |
+| 天气查询 | 通过 wttr.in 查询实时天气和预报 | 只读网络请求 |
+| 计算器 | 数学计算和单位换算 | AST 白名单，无 `eval` |
+| 数据库查询 | 查询示例 SQLite 库存数据 | SELECT-only，限制返回行数 |
+| 记忆与知识库 | 长期记忆、文档索引、语义检索、来源引用 | user_id 逻辑分区，检索片段带来源 |
 
-## 快速开始
+## 演示场景
 
-### 开发模式
+1. **天气 + 计算**
+   用户询问“查询北京当前天气，并把气温换算为华氏度”，Agent 会先调用天气工具，再调用计算器工具。
 
-```powershell
-Copy-Item backend/.env.example backend/.env
-# 编辑 backend/.env，填入 OpenAI 兼容 API 配置
-python -m pip install -r backend/requirements.txt -r servers/memory-server/requirements.txt
-python run.py          # 一键启动所有服务
-```
+2. **库存查询**
+   用户询问“库存最少的三个产品”，Agent 调用数据库工具并用表格回答。
 
-浏览器打开 http://localhost:8000
+3. **RAG 溯源**
+   用户写入员工手册内容后，Agent 调用知识库检索并基于来源回答制度问题。
 
-### Docker 部署
-
-```powershell
-Copy-Item backend/.env.example backend/.env
-# 编辑 backend/.env，填入 OpenAI 兼容 API 配置
-docker compose up -d --build
-```
-
-`.env` 可省略以便先启动和测试 MCP 工具；AI 对话、语义记忆与知识库功能需要有效的 API Key 和支持的 Chat/Embedding 模型。
-
-### 自检
-
-```powershell
-python smoke_test.py
-python servers/memory-server/evaluate_knowledge.py
-docker compose config --quiet
-```
+4. **安全边界**
+   用户尝试读取 `../backend/.env`，文件工具会拒绝沙箱外访问。
 
 ## 技术架构
 
+```text
+React 控制台
+  -> FastAPI SSE API
+  -> ReAct Agent Engine
+  -> MCP Client Manager
+  -> 5 个独立 MCP Server
+  -> 文件 / Web API / AST 计算 / SQLite / ChromaDB
 ```
-MCP Server（FastMCP + SSE 传输）→ FastAPI 后端（MCP Client Manager + Agent 引擎）→ 原生 Web UI
-```
-
-每个 MCP Server 是独立服务，通过 SSE 传输实现 MCP 协议通信。后端运行 ReAct 循环，连接你的中转站 LLM 实现 AI 工具调用。
 
 ## 技术栈
 
-- **MCP 协议**: mcp Python SDK（FastMCP）
-- **后端**: Python / FastAPI / uvicorn
-- **AI**: OpenAI 兼容 API
-- **前端**: 原生 HTML/CSS/JS（无框架）
-- **容器化**: Docker / Docker Compose
+- **前端**：React + TypeScript + Vite
+- **后端**：Python + FastAPI + SSE
+- **Agent**：OpenAI 兼容 Chat Completions，支持流式输出和 function calling
+- **MCP**：mcp Python SDK + FastMCP + SSE transport
+- **RAG/记忆**：ChromaDB + OpenAI 兼容 Embedding
+- **部署**：Docker Compose
+
+## 快速开始
+
+```powershell
+Copy-Item backend/.env.example backend/.env
+# 编辑 backend/.env，填入 OpenAI 兼容 API 配置
+
+python -m pip install -r backend/requirements.txt -r servers/memory-server/requirements.txt
+cd frontend
+npm install
+npm run build
+cd ..
+python run.py
+```
+
+浏览器打开：
+
+- React 开发服务：`http://127.0.0.1:5174`
+- 后端托管页面：`http://127.0.0.1:8000`
+
+## Docker 部署
+
+```powershell
+Copy-Item backend/.env.example backend/.env
+# 编辑 backend/.env
+docker compose up -d --build
+```
+
+Docker 镜像会构建 React 前端并由 FastAPI 托管。
+
+## 自检
+
+```powershell
+python smoke_test.py
+cd frontend
+npm run build
+cd ..
+docker compose config --quiet
+```
 
 ## 项目结构
 
-```
+```text
 mcp-tool-market/
-├── servers/          # 5 个 MCP Server（每个独立端口）
-│   ├── file-server/
-│   ├── weather-server/
-│   ├── calculator-server/
-│   ├── db-server/
-│   └── memory-server/  # 记忆系统（双阶段流水线 + ChromaDB）
-├── backend/          # FastAPI 后端（端口 8000）
-│   ├── app.py           # API 路由
-│   ├── mcp_client.py    # MCP 客户端管理器
-│   ├── agent_engine.py  # Agent ReAct 循环
-│   └── static/          # Web 界面
+├── frontend/             # React + TypeScript 控制台
+├── backend/              # FastAPI API、Agent 引擎、MCP Client Manager
+├── servers/
+│   ├── file-server/      # 文件沙箱 MCP Server
+│   ├── weather-server/   # 天气 MCP Server
+│   ├── calculator-server/# AST 计算 MCP Server
+│   ├── db-server/        # SQLite 查询 MCP Server
+│   └── memory-server/    # 记忆与知识库 MCP Server
+├── smoke_test.py
 ├── docker-compose.yml
 └── run.py
 ```
+
+## 当前边界
+
+这是本地演示和面试项目，不是生产 SaaS：
+
+- 暂无登录、租户鉴权和 RBAC。
+- `user_id` 只做逻辑分区，不能当生产级隔离。
+- 天气工具依赖公开 wttr.in，稳定性受外部服务影响。
+- 知识库阈值需要随真实 embedding 模型和业务语料继续校准。
 
 ## License
 

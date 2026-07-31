@@ -193,6 +193,221 @@ class SmokeTests(unittest.TestCase):
             knowledge_store._collection = original
 
 
+class TraceDiagnosticsTests(unittest.IsolatedAsyncioTestCase):
+    """对话级轨迹诊断：token / trace_id / tool_result.ok（不依赖真实 LLM）。"""
+
+    def test_extract_tokens(self):
+        extract = agent_engine.AgentEngine._extract_tokens
+        self.assertIsNone(extract(None))
+        self.assertIsNone(extract(SimpleNamespace()))
+        self.assertEqual(
+            extract(SimpleNamespace(
+                prompt_tokens=10, completion_tokens=5, total_tokens=15
+            )),
+            {"prompt": 10, "completion": 5, "total": 15},
+        )
+        # total 缺失时由 prompt + completion 推导
+        self.assertEqual(
+            extract(SimpleNamespace(
+                prompt_tokens=3, completion_tokens=4, total_tokens=None
+            )),
+            {"prompt": 3, "completion": 4, "total": 7},
+        )
+        # 单侧为 0 仍应返回结构
+        self.assertEqual(
+            extract(SimpleNamespace(
+                prompt_tokens=0, completion_tokens=0, total_tokens=0
+            )),
+            {"prompt": 0, "completion": 0, "total": 0},
+        )
+
+    async def test_chat_error_final_carries_trace_id(self):
+        engine = agent_engine.AgentEngine(SimpleNamespace(
+            get_all_tools_spec=lambda: [],
+        ))
+
+        async def no_recall(*_args, **_kwargs):
+            return []
+
+        engine._recall_memories = no_recall
+
+        async def boom(**_kwargs):
+            raise RuntimeError("llm down")
+
+        original = agent_engine.client.chat.completions.create
+        agent_engine.client.chat.completions.create = boom
+        try:
+            events = []
+            async for event in engine.chat(
+                [{"role": "user", "content": "hi"}],
+                user_id="alice",
+                trace_id="trace-abc",
+            ):
+                events.append(event)
+        finally:
+            agent_engine.client.chat.completions.create = original
+
+        self.assertTrue(events)
+        thinking = next(e for e in events if e["type"] == "thinking")
+        self.assertEqual(thinking["trace_id"], "trace-abc")
+        self.assertEqual(thinking.get("round"), 1)
+
+        final = events[-1]
+        self.assertEqual(final["type"], "final")
+        self.assertEqual(final["trace_id"], "trace-abc")
+        self.assertIn("API 请求失败", final["content"])
+        self.assertIn("duration_ms", final)
+        self.assertIsInstance(final["duration_ms"], int)
+        self.assertGreaterEqual(final["duration_ms"], 0)
+        self.assertEqual(final["tool_calls"], 0)
+        self.assertNotIn("tokens", final)
+
+    async def test_tool_result_ok_flags_and_final_summary(self):
+        class FakeMCP:
+            def get_all_tools_spec(self):
+                return [{
+                    "server": "calculator",
+                    "name": "calculate",
+                    "description": "calc",
+                    "inputSchema": {"properties": {"expr": {}}},
+                }]
+
+            async def call_tool(self, server, tool, arguments):
+                if arguments.get("fail"):
+                    raise RuntimeError("tool boom")
+                return "42"
+
+        engine = agent_engine.AgentEngine(FakeMCP())
+
+        async def no_recall(*_args, **_kwargs):
+            return []
+
+        engine._recall_memories = no_recall
+        engine._start_memory_task = lambda *_a, **_k: None
+
+        calls = {"n": 0}
+
+        def _tool_call(call_id, name, arguments):
+            return SimpleNamespace(
+                id=call_id,
+                function=SimpleNamespace(name=name, arguments=arguments),
+            )
+
+        def _response(message, usage=None):
+            return SimpleNamespace(
+                choices=[SimpleNamespace(message=message)],
+                usage=usage,
+            )
+
+        async def fake_create(**_kwargs):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                return _response(
+                    SimpleNamespace(
+                        content=None,
+                        tool_calls=[
+                            _tool_call(
+                                "tc-ok",
+                                "calculator__calculate",
+                                '{"expr":"1+1"}',
+                            ),
+                            _tool_call(
+                                "tc-fail",
+                                "calculator__calculate",
+                                '{"expr":"1+1","fail":true}',
+                            ),
+                            _tool_call(
+                                "tc-bad",
+                                "not-a-valid-tool",
+                                "{}",
+                            ),
+                        ],
+                    ),
+                    usage=SimpleNamespace(
+                        prompt_tokens=10, completion_tokens=2, total_tokens=12
+                    ),
+                )
+            return _response(
+                SimpleNamespace(content="done", tool_calls=None),
+                usage=SimpleNamespace(
+                    prompt_tokens=5, completion_tokens=1, total_tokens=6
+                ),
+            )
+
+        original = agent_engine.client.chat.completions.create
+        agent_engine.client.chat.completions.create = fake_create
+        try:
+            events = []
+            async for event in engine.chat(
+                [{"role": "user", "content": "calc"}],
+                trace_id="t-1",
+            ):
+                events.append(event)
+        finally:
+            agent_engine.client.chat.completions.create = original
+
+        for event in events:
+            self.assertEqual(event["trace_id"], "t-1")
+
+        tool_calls = [e for e in events if e["type"] == "tool_call"]
+        self.assertEqual(len(tool_calls), 2)  # 解析失败的那次不发 tool_call
+
+        tool_results = [e for e in events if e["type"] == "tool_result"]
+        self.assertEqual(len(tool_results), 3)
+        self.assertTrue(tool_results[0]["ok"])
+        self.assertIn("duration_ms", tool_results[0])
+        self.assertFalse(tool_results[1]["ok"])
+        self.assertFalse(tool_results[2]["ok"])
+        self.assertIn("工具调用参数无效", tool_results[2]["content"])
+
+        final = events[-1]
+        self.assertEqual(final["type"], "final")
+        self.assertEqual(final["content"], "done")
+        self.assertEqual(final["tool_calls"], 3)
+        self.assertEqual(
+            final["tokens"],
+            {"prompt": 15, "completion": 3, "total": 18},
+        )
+        self.assertIn("duration_ms", final)
+        self.assertIsInstance(final["duration_ms"], int)
+
+    async def test_chat_generates_trace_id_when_omitted(self):
+        engine = agent_engine.AgentEngine(SimpleNamespace(
+            get_all_tools_spec=lambda: [],
+        ))
+
+        async def no_recall(*_args, **_kwargs):
+            return []
+
+        engine._recall_memories = no_recall
+        engine._start_memory_task = lambda *_a, **_k: None
+
+        async def fake_create(**_kwargs):
+            return SimpleNamespace(
+                choices=[SimpleNamespace(
+                    message=SimpleNamespace(content="ok", tool_calls=None)
+                )],
+                usage=None,
+            )
+
+        original = agent_engine.client.chat.completions.create
+        agent_engine.client.chat.completions.create = fake_create
+        try:
+            events = []
+            async for event in engine.chat([{"role": "user", "content": "hi"}]):
+                events.append(event)
+        finally:
+            agent_engine.client.chat.completions.create = original
+
+        trace_ids = {e["trace_id"] for e in events}
+        self.assertEqual(len(trace_ids), 1)
+        self.assertTrue(next(iter(trace_ids)))
+        final = events[-1]
+        self.assertEqual(final["type"], "final")
+        self.assertEqual(final["tool_calls"], 0)
+        self.assertNotIn("tokens", final)
+
+
 class MCPClientTests(unittest.IsolatedAsyncioTestCase):
     async def test_connect_rechecks_and_clears_stale_tools_on_failure(self):
         manager = mcp_client.MCPClientManager()

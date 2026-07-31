@@ -2,6 +2,10 @@ import asyncio
 import json
 import logging
 import os
+import time
+from types import SimpleNamespace
+from uuid import uuid4
+
 import httpx
 from openai import AsyncOpenAI
 from typing import AsyncGenerator
@@ -75,12 +79,15 @@ def _tools_to_openai(tools: list[dict]) -> list[dict]:
 
 def _parse_tool_call(tc):
     """Parse an OpenAI tool call into (server_name, tool_name, arguments)."""
-    parts = tc.function.name.split("__", 1)
+    function = tc.get("function") if isinstance(tc, dict) else tc.function
+    name = function.get("name") if isinstance(function, dict) else function.name
+    raw_args = function.get("arguments") if isinstance(function, dict) else function.arguments
+    parts = name.split("__", 1)
     if len(parts) != 2 or not all(parts):
-        raise ValueError(f"Invalid tool name: {tc.function.name}")
+        raise ValueError(f"Invalid tool name: {name}")
     server_name = parts[0]
     tool_name = parts[1]
-    arguments = json.loads(tc.function.arguments) if tc.function.arguments else {}
+    arguments = json.loads(raw_args) if raw_args else {}
     if not isinstance(arguments, dict):
         raise ValueError("Tool arguments must be a JSON object")
     return server_name, tool_name, arguments
@@ -164,37 +171,114 @@ class AgentEngine:
         except Exception:
             pass
 
-    async def chat(self, messages: list[dict], user_id: str = "default") -> AsyncGenerator[dict, None]:
+    @staticmethod
+    def _extract_tokens(usage) -> dict | None:
+        """从 OpenAI usage 安全提取 token 计数；usage 可能为 None。"""
+        if usage is None:
+            return None
+        prompt = getattr(usage, "prompt_tokens", None)
+        completion = getattr(usage, "completion_tokens", None)
+        total = getattr(usage, "total_tokens", None)
+        if prompt is None and completion is None and total is None:
+            return None
+        prompt = int(prompt or 0)
+        completion = int(completion or 0)
+        total = int(total if total is not None else prompt + completion)
+        return {"prompt": prompt, "completion": completion, "total": total}
+
+    @staticmethod
+    def _partial_tool_meta(tc) -> dict:
+        """参数解析失败时尽量从原始 tool_call 回填 server/tool/args。"""
+        meta = {}
+        function = tc.get("function") if isinstance(tc, dict) else getattr(tc, "function", None)
+        raw_name = (
+            function.get("name") if isinstance(function, dict)
+            else getattr(function, "name", None)
+        ) or ""
+        if "__" in raw_name:
+            parts = raw_name.split("__", 1)
+            if len(parts) == 2 and parts[0] and parts[1]:
+                meta["server"] = parts[0]
+                meta["tool"] = parts[1]
+        raw_args = (
+            function.get("arguments") if isinstance(function, dict)
+            else getattr(function, "arguments", None)
+        )
+        if raw_args:
+            try:
+                parsed = json.loads(raw_args)
+                meta["args"] = parsed if isinstance(parsed, dict) else {"_raw": raw_args}
+            except (TypeError, json.JSONDecodeError):
+                meta["args"] = {"_raw": raw_args}
+        return meta
+
+    async def chat(
+        self,
+        messages: list[dict],
+        user_id: str = "default",
+        trace_id: str | None = None,
+    ) -> AsyncGenerator[dict, None]:
         """Run a ReAct loop, yielding SSE events for each step.
 
-        Yields dicts with keys:
-          - {"type": "thinking", "content": ...}
-          - {"type": "memory_recall", "content": ..., "memories": [...]}
-          - {"type": "tool_call", "content": ..., "server": ..., "tool": ..., "args": ...}
-          - {"type": "tool_result", "content": ...}
-          - {"type": "final", "content": ...}
+        每个事件都带 trace_id；可选 duration_ms / tokens；
+        tool_result 带 ok 与 server/tool/args 供前端重放。
         """
+        trace_id = trace_id or str(uuid4())
+        chat_started = time.perf_counter()
+        total_tokens = {"prompt": 0, "completion": 0, "total": 0}
+        tool_call_count = 0
         conversation = list(messages)
+
+        def _elapsed_ms(started: float) -> int:
+            return int((time.perf_counter() - started) * 1000)
+
+        def _accumulate_tokens(tokens: dict | None) -> None:
+            if not tokens:
+                return
+            total_tokens["prompt"] += tokens["prompt"]
+            total_tokens["completion"] += tokens["completion"]
+            total_tokens["total"] += tokens["total"]
+
+        def _final_event(content: str) -> dict:
+            event = {
+                "type": "final",
+                "content": content,
+                "trace_id": trace_id,
+                "duration_ms": _elapsed_ms(chat_started),
+                "tool_calls": tool_call_count,
+            }
+            if any(total_tokens[k] > 0 for k in ("prompt", "completion", "total")):
+                event["tokens"] = dict(total_tokens)
+            return event
 
         # 对话前：检索相关记忆并注入
         recalled = []
         if conversation and conversation[-1].get("role") == "user":
+            recall_started = time.perf_counter()
             recalled = await self._recall_memories(
                 conversation[-1].get("content", ""), user_id)
-        if recalled:
-            memory_data = _format_memory_data(recalled)
-            yield {
-                "type": "memory_recall",
-                "content": "想起了 " + str(len(recalled)) + " 条相关记忆",
-                "memories": [m["content"] for m in recalled],
-            }
+            if recalled:
+                memory_data = _format_memory_data(recalled)
+                yield {
+                    "type": "memory_recall",
+                    "content": "想起了 " + str(len(recalled)) + " 条相关记忆",
+                    "memories": [m["content"] for m in recalled],
+                    "trace_id": trace_id,
+                    "duration_ms": _elapsed_ms(recall_started),
+                }
+            else:
+                memory_data = "[]"
         else:
             memory_data = "[]"
 
         for round_num in range(1, 11):
-            yield {"type": "thinking", "content": f"思考中...（第 {round_num} 轮）"}
+            yield {
+                "type": "thinking",
+                "content": f"思考中...（第 {round_num} 轮）",
+                "trace_id": trace_id,
+                "round": round_num,
+            }
 
-            # Gather available tools and build system prompt
             tools = self.mcp_client.get_all_tools_spec()
             tools_desc = _tools_to_desc(tools)
             system_prompt = (SYSTEM_PROMPT
@@ -207,31 +291,80 @@ class AgentEngine:
             ]
             openai_tools = _tools_to_openai(tools) if tools else None
 
-            # Call the LLM
+            # 调用 LLM：本轮耗时计入 final.duration_ms，usage 累计到 final.tokens
+            # thinking 已先发出保持实时感，故 LLM 步骤 duration/tokens 不回填到 thinking
+            llm_started = time.perf_counter()
             try:
-                response = await client.chat.completions.create(
+                stream = await client.chat.completions.create(
                     model=MODEL,
                     messages=api_messages,
                     tools=openai_tools,
+                    stream=True,
+                    stream_options={"include_usage": True},
                 )
             except Exception as e:
                 logger.exception("LLM request failed")
-                yield {"type": "final", "content": f"API 请求失败: {e}"}
+                yield _final_event(f"API 请求失败: {e}")
                 return
 
-            choice = response.choices[0]
-            message = choice.message
+            content_parts: list[str] = []
+            streamed_tool_calls: dict[int, dict] = {}
+            usage = None
+
+            if hasattr(stream, "__aiter__"):
+                async for chunk in stream:
+                    if getattr(chunk, "usage", None):
+                        usage = chunk.usage
+                    if not chunk.choices:
+                        continue
+                    delta = chunk.choices[0].delta
+                    if getattr(delta, "content", None):
+                        content_parts.append(delta.content)
+                        yield {
+                            "type": "stream_delta",
+                            "content": delta.content,
+                            "trace_id": trace_id,
+                        }
+                    for tc in getattr(delta, "tool_calls", None) or []:
+                        item = streamed_tool_calls.setdefault(
+                            tc.index,
+                            {"id": "", "type": "function", "function": {"name": "", "arguments": ""}},
+                        )
+                        if getattr(tc, "id", None):
+                            item["id"] += tc.id
+                        if getattr(tc, "type", None):
+                            item["type"] = tc.type
+                        if getattr(tc, "function", None):
+                            if getattr(tc.function, "name", None):
+                                item["function"]["name"] += tc.function.name
+                            if getattr(tc.function, "arguments", None):
+                                item["function"]["arguments"] += tc.function.arguments
+
+                _accumulate_tokens(self._extract_tokens(usage))
+                message = SimpleNamespace(
+                    content="".join(content_parts),
+                    tool_calls=[streamed_tool_calls[i] for i in sorted(streamed_tool_calls)],
+                )
+            else:
+                _accumulate_tokens(self._extract_tokens(getattr(stream, "usage", None)))
+                message = stream.choices[0].message
+
+            _ = _elapsed_ms(llm_started)
 
             if message.tool_calls:
                 # OpenAI 要求单条 assistant 消息包含所有 tool_calls
                 assistant_tool_calls = []
                 for tc in message.tool_calls:
+                    function = tc.get("function") if isinstance(tc, dict) else tc.function
                     assistant_tool_calls.append({
-                        "id": tc.id,
-                        "type": "function",
+                        "id": tc.get("id") if isinstance(tc, dict) else tc.id,
+                        "type": tc.get("type", "function") if isinstance(tc, dict) else getattr(tc, "type", "function"),
                         "function": {
-                            "name": tc.function.name,
-                            "arguments": tc.function.arguments,
+                            "name": function.get("name") if isinstance(function, dict) else function.name,
+                            "arguments": (
+                                function.get("arguments") if isinstance(function, dict)
+                                else function.arguments
+                            ),
                         },
                     })
 
@@ -242,6 +375,7 @@ class AgentEngine:
                 })
 
                 for tc in message.tool_calls:
+                    tool_call_count += 1
                     try:
                         server_name, tool_name, arguments = _parse_tool_call(tc)
                         arguments = self.bind_user_scope(
@@ -249,10 +383,18 @@ class AgentEngine:
                         )
                     except (ValueError, json.JSONDecodeError) as e:
                         result = f"工具调用参数无效: {e}"
-                        yield {"type": "tool_result", "content": result}
+                        parse_event = {
+                            "type": "tool_result",
+                            "content": result,
+                            "ok": False,
+                            "trace_id": trace_id,
+                            "duration_ms": 0,
+                        }
+                        parse_event.update(self._partial_tool_meta(tc))
+                        yield parse_event
                         conversation.append({
                             "role": "tool",
-                            "tool_call_id": tc.id,
+                            "tool_call_id": tc.get("id") if isinstance(tc, dict) else tc.id,
                             "content": result,
                         })
                         continue
@@ -263,24 +405,34 @@ class AgentEngine:
                         "server": server_name,
                         "tool": tool_name,
                         "args": arguments,
+                        "trace_id": trace_id,
                     }
 
+                    tool_started = time.perf_counter()
+                    ok = True
                     try:
                         result = await self.mcp_client.call_tool(
                             server_name, tool_name, arguments
                         )
                     except Exception as e:
+                        ok = False
                         result = f"工具调用失败: {e}"
                     result = _limit_tool_result(result)
 
                     yield {
                         "type": "tool_result",
                         "content": f"工具返回:\n\n{result}",
+                        "ok": ok,
+                        "server": server_name,
+                        "tool": tool_name,
+                        "args": arguments,
+                        "trace_id": trace_id,
+                        "duration_ms": _elapsed_ms(tool_started),
                     }
 
                     conversation.append({
                         "role": "tool",
-                        "tool_call_id": tc.id,
+                        "tool_call_id": tc.get("id") if isinstance(tc, dict) else tc.id,
                         "content": result,
                     })
                 # Continue to next round
@@ -290,7 +442,7 @@ class AgentEngine:
                 self._start_memory_task(
                     conversation + [{"role": "assistant", "content": message.content or ""}],
                     user_id)
-                yield {"type": "final", "content": content}
+                yield _final_event(content)
                 return
 
-        yield {"type": "final", "content": "已达到最大轮次限制，请简化你的需求或重试。"}
+        yield _final_event("已达到最大轮次限制，请简化你的需求或重试。")

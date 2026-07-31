@@ -3,7 +3,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from typing import Literal
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import httpx
 from fastapi import FastAPI, HTTPException, Query
@@ -122,22 +122,31 @@ async def test_tool(req: TestToolRequest):
 @app.post("/api/chat")
 async def chat(req: ChatRequest):
     """Stream a conversation with the AI agent via SSE."""
+    trace_id = str(uuid4())
 
     async def event_stream():
         try:
             messages = [message.model_dump() for message in req.messages]
-            async for event in agent.chat(messages, req.user_id):
+            async for event in agent.chat(messages, req.user_id, trace_id=trace_id):
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
         except Exception:
             logger.exception("Unhandled chat stream error")
-            event = {"type": "final", "content": "服务暂时不可用，请稍后重试。"}
+            event = {
+                "type": "final",
+                "content": "服务暂时不可用，请稍后重试。",
+                "trace_id": trace_id,
+            }
             yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
     return StreamingResponse(
         event_stream(),
         media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "Connection": "keep-alive",
-                 "X-Accel-Buffering": "no"},
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+            "X-Trace-Id": trace_id,
+        },
     )
 
 
@@ -199,7 +208,15 @@ async def api_delete_memory(
 # Static file serving (frontend)
 # ---------------------------------------------------------------------------
 
-_STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+_REPO_ROOT = os.path.dirname(os.path.dirname(__file__))
+_BACKEND_DIR = os.path.dirname(__file__)
+_STATIC_CANDIDATES = [
+    os.getenv("FRONTEND_DIST_DIR", ""),
+    os.path.join(_REPO_ROOT, "frontend", "dist"),
+    os.path.join(_BACKEND_DIR, "frontend", "dist"),
+    os.path.join(_BACKEND_DIR, "static"),
+]
+_STATIC_DIR = next(path for path in _STATIC_CANDIDATES if path and os.path.isdir(path))
 app.mount("/", StaticFiles(directory=_STATIC_DIR, html=True), name="static")
 
 

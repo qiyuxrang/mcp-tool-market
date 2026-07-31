@@ -1,0 +1,12 @@
+.git
+__pycache__/
+*.pyc
+*.log
+.env
+.env.*
+backend/.env
+frontend/node_modules/
+frontend/dist/
+servers/memory-server/chroma_data/
+workspace/
+servers/file-server/workspace/

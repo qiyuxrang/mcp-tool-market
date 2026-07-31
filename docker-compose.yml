@@ -22,7 +22,9 @@ services:
       - ./servers/memory-server/chroma_data:/app/chroma_data
 
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     ports: ["127.0.0.1:8000:8000"]
     depends_on: [file-server, weather-server, calculator-server, db-server, memory-server]
     env_file:
