@@ -141,6 +141,13 @@ function hasToolError(text: string) {
   return /(^|\b)(error|failed|失败|不可用|not connected|could not)/i.test(text);
 }
 
+function evalStatusLabel(status: EvalResult["status"]) {
+  if (status === "running") return "运行中";
+  if (status === "passed") return "通过";
+  if (status === "failed") return "失败";
+  return "待运行";
+}
+
 export default function App() {
   const [servers, setServers] = useState<ServerInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -362,7 +369,7 @@ export default function App() {
     if (name === "天气 + 计算") {
       const weather = await callTool("weather", "get_weather", { city: "Beijing" });
       if (!weather.ok) return weather.content.slice(0, 100);
-      const data = JSON.parse(weather.content) as { temperature?: string };
+      const data = JSON.parse(weather.content) as { city?: string; temperature?: string; condition?: string };
       const celsius = Number.parseFloat(data.temperature || "");
       if (!Number.isFinite(celsius)) return "天气返回中没有可解析的摄氏温度";
       const converted = await callTool("calculator", "unit_convert", {
@@ -370,14 +377,17 @@ export default function App() {
         from_unit: "c",
         to_unit: "f",
       });
-      return converted.content.slice(0, 100);
+      return `${data.city || "Beijing"} ${data.condition || "weather"}，${converted.content}`;
     }
 
     if (name === "库存查询") {
       const result = await callTool("database", "query_db", {
         sql: "SELECT name, category, stock FROM products ORDER BY stock ASC LIMIT 3",
       });
-      return result.content.slice(0, 120);
+      const rows = JSON.parse(result.content) as Array<{ name?: string; stock?: number }>;
+      return `返回库存最低的 ${rows.length} 个产品：${rows
+        .map((row) => `${row.name}(${row.stock})`)
+        .join("、")}`;
     }
 
     if (name === "RAG 溯源") {
@@ -388,11 +398,16 @@ export default function App() {
         query: "住宿标准是多少，来源是什么",
         top_k: 3,
       });
-      return searched.content.slice(0, 120);
+      const rows = JSON.parse(searched.content) as Array<{ source?: string; score?: number }>;
+      return rows.length
+        ? `检索到 ${rows[0].source || "知识库"} 来源片段，score=${rows[0].score?.toFixed(3) ?? "n/a"}`
+        : "未检索到可用来源片段";
     }
 
     const result = await callTool("file", "read_file", { path: "../backend/.env" });
-    return result.content.slice(0, 120);
+    return /Access denied|outside the sandbox/i.test(result.content)
+      ? "已阻止读取沙箱外路径 ../backend/.env"
+      : result.content.slice(0, 120);
   }
 
   async function replayEvent(event: ChatEvent, index: number) {
@@ -586,7 +601,7 @@ export default function App() {
                   <p>{task.prompt}</p>
                 </div>
                 <div className={`eval-status ${evalResults[task.prompt]?.status || "idle"}`}>
-                  {evalResults[task.prompt]?.status || "idle"}
+                  {evalStatusLabel(evalResults[task.prompt]?.status || "idle")}
                 </div>
                 {evalResults[task.prompt]?.detail && (
                   <p className="eval-detail">{evalResults[task.prompt].detail}</p>

@@ -299,12 +299,16 @@ h3 {
 
 .badge,
 .eval-status {
+  display: inline-flex;
+  align-items: center;
   border-radius: 999px;
   background: #e6ebf2;
   color: #475569;
   font-size: 12px;
   line-height: 1;
   padding: 6px 8px;
+  white-space: nowrap;
+  width: fit-content;
 }
 
 .badge.ok {
@@ -546,6 +550,7 @@ h3 {
 
 .eval-status {
   justify-self: start;
+  min-height: 28px;
 }
 
 .eval-status.running {
@@ -566,6 +571,7 @@ h3 {
 .eval-detail {
   color: var(--muted);
   font-size: 12px;
+  overflow-wrap: anywhere;
 }
 
 .empty {
